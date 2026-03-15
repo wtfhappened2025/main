@@ -409,33 +409,68 @@ async def fetch_x_trending() -> list:
             # 2. Fallback: Search recent popular tweets if trends didn't work
             if not topics:
                 try:
-                    resp = await client.get(
-                        "https://api.x.com/2/tweets/search/recent",
-                        params={
-                            "query": "trending -is:retweet lang:en",
-                            "max_results": 10,
-                            "sort_order": "relevancy",
-                            "tweet.fields": "public_metrics,created_at",
-                        }
-                    )
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        for i, tweet in enumerate(data.get("data", [])[:8]):
-                            text = tweet.get("text", "")
-                            # Trim to first sentence
-                            title = text.split("\n")[0][:120]
-                            metrics = tweet.get("public_metrics", {})
-                            engagement = metrics.get("like_count", 0) + metrics.get("retweet_count", 0)
+                    # Search for newsworthy trending content, filter spam
+                    queries = [
+                        "(breaking OR just announced OR breaking news) -is:retweet -is:reply lang:en",
+                        "(why is OR why did OR what happened) -is:retweet -is:reply lang:en",
+                    ]
+                    for query in queries:
+                        resp = await client.get(
+                            "https://api.x.com/2/tweets/search/recent",
+                            params={
+                                "query": query,
+                                "max_results": 10,
+                                "sort_order": "relevancy",
+                                "tweet.fields": "public_metrics,created_at,author_id",
+                            }
+                        )
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            for i, tweet in enumerate(data.get("data", [])[:5]):
+                                text = tweet.get("text", "")
+                                # Skip short tweets, spam patterns
+                                if len(text) < 30:
+                                    continue
+                                if any(spam in text.lower() for spam in ["follow me", "check out my", "blogger", "signals", "giveaway", "dm me"]):
+                                    continue
 
-                            topics.append({
-                                "title": f"Why: {title}" if "?" not in title else title,
-                                "category": "world_news",
-                                "source": "x_twitter",
-                                "trend_score": min(90, max(55, int(engagement / 100))),
-                                "raw_data": {"tweet_id": tweet.get("id"), "engagement": engagement},
-                            })
-                    else:
-                        logger.warning(f"X search API returned {resp.status_code}: {resp.text[:200]}")
+                                # Take first meaningful line
+                                title = text.split("\n")[0].split("http")[0].strip()
+                                if len(title) < 20:
+                                    continue
+                                if len(title) > 120:
+                                    title = title[:117] + "..."
+
+                                metrics = tweet.get("public_metrics", {})
+                                engagement = metrics.get("like_count", 0) + metrics.get("retweet_count", 0)
+
+                                # Categorize
+                                title_lower = title.lower()
+                                if any(w in title_lower for w in ["stock", "market", "earnings", "fed", "rate"]):
+                                    category = "finance"
+                                elif any(w in title_lower for w in ["ai", "gpt", "openai", "chatgpt"]):
+                                    category = "ai"
+                                elif any(w in title_lower for w in ["crypto", "bitcoin", "btc"]):
+                                    category = "crypto"
+                                elif any(w in title_lower for w in ["tech", "apple", "google", "microsoft"]):
+                                    category = "technology"
+                                else:
+                                    category = "world_news"
+
+                                topics.append({
+                                    "title": title if "?" in title else f"Why: {title}",
+                                    "category": category,
+                                    "source": "x_twitter",
+                                    "trend_score": min(90, max(55, int(engagement / 100))),
+                                    "raw_data": {"tweet_id": tweet.get("id"), "engagement": engagement},
+                                })
+                        elif resp.status_code == 402:
+                            logger.warning("X API credits depleted")
+                            break
+                        else:
+                            logger.warning(f"X search API returned {resp.status_code}: {resp.text[:200]}")
+                        if len(topics) >= 8:
+                            break
                 except Exception as e:
                     logger.warning(f"X search endpoint failed: {e}")
 
