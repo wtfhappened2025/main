@@ -1,52 +1,95 @@
-import { useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import { useState, useCallback } from 'react';
+import '@/App.css';
+import TrendingFeed from '@/components/TrendingFeed';
+import ExplanationView from '@/components/ExplanationView';
+import ExplainInput from '@/components/ExplainInput';
+import SavedTopics from '@/components/SavedTopics';
+import BottomNav from '@/components/BottomNav';
+import SocialCardPreview from '@/components/SocialCardPreview';
+import { AnimatePresence, motion } from 'framer-motion';
+import api from '@/api';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+function App() {
+  const [activeTab, setActiveTab] = useState('trending');
+  const [selectedTopic, setSelectedTopic] = useState(null);
+  const [socialCard, setSocialCard] = useState(null);
 
-const Home = () => {
-  const helloWorldApi = async () => {
+  const handleTopicClick = useCallback((topic) => {
+    setSelectedTopic(topic);
+  }, []);
+
+  const handleBack = useCallback(() => {
+    setSelectedTopic(null);
+  }, []);
+
+  const handleShare = useCallback(async (topic) => {
     try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
+      const data = await api.getRenderCard(topic.id);
+      setSocialCard(data.card_data);
     } catch (e) {
-      console.error(e, `errored out requesting / api`);
+      console.error('Failed to load social card:', e);
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    helloWorldApi();
+  const handleExplained = useCallback((topic, explanation) => {
+    setSelectedTopic(topic);
+  }, []);
+
+  const handleTabChange = useCallback((tab) => {
+    setSelectedTopic(null);
+    setActiveTab(tab);
   }, []);
 
   return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
+    <div className="app-shell">
+      <AnimatePresence mode="wait">
+        {selectedTopic ? (
+          <motion.div
+            key="explanation"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ExplanationView
+              topic={selectedTopic}
+              onBack={handleBack}
+              onShare={handleShare}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {activeTab === 'trending' && (
+              <TrendingFeed onTopicClick={handleTopicClick} />
+            )}
+            {activeTab === 'explain' && (
+              <ExplainInput onExplained={handleExplained} />
+            )}
+            {activeTab === 'saved' && (
+              <SavedTopics onTopicClick={handleTopicClick} />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-function App() {
-  return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      {/* Bottom navigation */}
+      <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+
+      {/* Social card preview overlay */}
+      <AnimatePresence>
+        {socialCard && (
+          <SocialCardPreview
+            cardData={socialCard}
+            onClose={() => setSocialCard(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
