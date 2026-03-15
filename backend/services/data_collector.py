@@ -244,6 +244,112 @@ SEED_EXPLANATIONS = {
 }
 
 
+async def fetch_hackernews_trending() -> list:
+    """Fetch top stories from Hacker News (free, no key)."""
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            # Get top story IDs
+            resp = await client.get("https://hacker-news.firebaseio.com/v0/topstories.json")
+            if resp.status_code != 200:
+                return []
+            story_ids = resp.json()[:15]  # Top 15
+
+            topics = []
+            for sid in story_ids:
+                try:
+                    item_resp = await client.get(f"https://hacker-news.firebaseio.com/v0/item/{sid}.json")
+                    if item_resp.status_code != 200:
+                        continue
+                    item = item_resp.json()
+                    if not item or item.get("type") != "story":
+                        continue
+
+                    title = item.get("title", "")
+                    score = item.get("score", 0)
+                    url = item.get("url", "")
+
+                    # Categorize based on keywords
+                    title_lower = title.lower()
+                    if any(w in title_lower for w in ["ai", "gpt", "llm", "machine learning", "neural", "openai", "anthropic"]):
+                        category = "ai"
+                    elif any(w in title_lower for w in ["stock", "market", "invest", "fund", "ipo", "valuation"]):
+                        category = "finance"
+                    elif any(w in title_lower for w in ["crypto", "bitcoin", "ethereum", "blockchain", "defi"]):
+                        category = "crypto"
+                    elif any(w in title_lower for w in ["science", "research", "study", "nasa", "physics", "biology"]):
+                        category = "science"
+                    else:
+                        category = "technology"
+
+                    topics.append({
+                        "title": title if "?" in title else f"Why: {title}",
+                        "category": category,
+                        "source": "hackernews",
+                        "trend_score": min(95, max(55, int(score / 50))),
+                        "raw_data": {"hn_id": sid, "score": score, "url": url, "comments": item.get("descendants", 0)},
+                    })
+                    if len(topics) >= 8:
+                        break
+                except Exception:
+                    continue
+            return topics
+    except Exception as e:
+        logger.error(f"Hacker News fetch failed: {e}")
+    return []
+
+
+async def fetch_google_trends() -> list:
+    """Fetch trending searches from Google Trends RSS feed."""
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get("https://trends.google.com/trending/rss?geo=US")
+            if resp.status_code != 200:
+                logger.warning(f"Google Trends RSS returned {resp.status_code}")
+                return []
+
+            text = resp.text
+            topics = []
+            import re
+            items = re.findall(r'<item>(.*?)</item>', text, re.DOTALL)
+            for i, item in enumerate(items[:10]):
+                title_match = re.search(r'<title>(.*?)</title>', item)
+                traffic_match = re.search(r'<ht:approx_traffic>(.*?)</ht:approx_traffic>', item)
+                news_match = re.search(r'<ht:news_item_title>(.*?)</ht:news_item_title>', item)
+
+                if not title_match:
+                    continue
+
+                query = title_match.group(1).strip()
+                traffic = traffic_match.group(1).strip() if traffic_match else ""
+                news_title = news_match.group(1).strip() if news_match else ""
+
+                # Unescape HTML entities
+                import html
+                query = html.unescape(query)
+                news_title = html.unescape(news_title) if news_title else ""
+
+                # Use news headline if available, otherwise the query
+                display_title = news_title if news_title else f"Why is '{query}' trending right now"
+
+                # Parse traffic for score
+                traffic_num = 0
+                if traffic:
+                    traffic_num = int(re.sub(r'[^0-9]', '', traffic) or 0)
+
+                topics.append({
+                    "title": display_title if "?" in display_title else f"Why: {display_title}",
+                    "category": "world_news",
+                    "source": "google_trends",
+                    "trend_score": min(95, max(60, 90 - i * 3)),
+                    "raw_data": {"query": query, "traffic": traffic, "rank": i + 1},
+                })
+
+            return topics
+    except Exception as e:
+        logger.error(f"Google Trends fetch failed: {e}")
+    return []
+
+
 async def collect_all_trending() -> list:
     """Collect trending topics from all available sources."""
     all_topics = []
@@ -253,6 +359,8 @@ async def collect_all_trending() -> list:
         ("CoinGecko", fetch_coingecko_trending),
         ("Wikipedia", fetch_wikipedia_trending),
         ("Reddit", fetch_reddit_trending),
+        ("Hacker News", fetch_hackernews_trending),
+        ("Google Trends", fetch_google_trends),
     ]
 
     for name, fetcher in sources:
