@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Check, Search, MapPin, Briefcase, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, Search, MapPin, Briefcase, Sparkles, Loader2, Plus } from 'lucide-react';
 import api from '@/api';
 
 const STEPS = [
@@ -50,10 +50,14 @@ const PROFESSIONAL_OPTIONS = [
   'Founder / entrepreneur', 'General curious person',
 ];
 
-const SUGGESTED_TOPICS = [
-  'AI', 'Tesla', 'Apple', 'Bitcoin', 'OpenAI', 'China',
-  'NASA', 'Google', 'Meta', 'Amazon', 'SpaceX', 'Nvidia',
+const TOPIC_GROUPS = [
+  { label: 'Technology', topics: ['AI', 'Nvidia', 'Apple', 'Google'] },
+  { label: 'Finance', topics: ['Bitcoin', 'Stock Market', 'Venture Capital'] },
+  { label: 'Countries', topics: ['China', 'USA', 'Russia'] },
+  { label: 'Internet', topics: ['TikTok', 'Memes', 'Influencers'] },
 ];
+
+const ALL_SUGGESTED = TOPIC_GROUPS.flatMap(g => [g.label, ...g.topics]);
 
 const COUNTRIES = [
   'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany',
@@ -127,9 +131,26 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
     }
   };
 
-  const filteredSuggested = SUGGESTED_TOPICS.filter(t =>
-    !topicSearch || t.toLowerCase().includes(topicSearch.toLowerCase())
-  );
+  const filteredGroups = topicSearch
+    ? TOPIC_GROUPS.map(g => ({
+        ...g,
+        topics: g.topics.filter(t => t.toLowerCase().includes(topicSearch.toLowerCase())),
+      })).filter(g => g.topics.length > 0 || g.label.toLowerCase().includes(topicSearch.toLowerCase()))
+    : TOPIC_GROUPS;
+
+  const searchMatchesExisting = topicSearch.trim() &&
+    ALL_SUGGESTED.some(t => t.toLowerCase() === topicSearch.trim().toLowerCase());
+  const searchMatchesFollowed = topicSearch.trim() &&
+    followedTopics.some(t => t.toLowerCase() === topicSearch.trim().toLowerCase());
+  const canAddCustom = topicSearch.trim().length >= 2 && !searchMatchesExisting && !searchMatchesFollowed;
+
+  const handleAddCustomTopic = () => {
+    const custom = topicSearch.trim();
+    if (custom && !followedTopics.includes(custom)) {
+      setFollowedTopics(prev => [...prev, custom]);
+    }
+    setTopicSearch('');
+  };
 
   const progress = ((step + 1) / STEPS.length) * 100;
 
@@ -368,30 +389,71 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
                     type="text"
                     value={topicSearch}
                     onChange={e => setTopicSearch(e.target.value)}
-                    placeholder="Search topics or companies"
+                    onKeyDown={e => { if (e.key === 'Enter' && canAddCustom) { e.preventDefault(); handleAddCustomTopic(); } }}
+                    placeholder="Search or type to add your own"
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200
                       text-sm text-gray-900 placeholder:text-gray-400 outline-none
                       focus:border-gray-400 focus:shadow-sm transition-all"
                   />
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {filteredSuggested.map(topic => (
-                    <button
-                      key={topic}
-                      data-testid={`follow-${topic.toLowerCase()}`}
-                      onClick={() => toggleItem(followedTopics, setFollowedTopics, topic)}
-                      className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
-                        ${followedTopics.includes(topic)
-                          ? 'bg-gray-900 text-white shadow-sm'
-                          : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                    >
-                      {followedTopics.includes(topic) && <Check size={14} className="inline mr-1" />}
-                      {topic}
-                    </button>
+
+                {canAddCustom && (
+                  <button
+                    data-testid="add-custom-topic"
+                    onClick={handleAddCustomTopic}
+                    className="w-full mb-4 px-4 py-2.5 rounded-xl bg-blue-50 text-blue-700 text-sm font-medium
+                      flex items-center gap-2 hover:bg-blue-100 transition-colors border border-blue-100"
+                  >
+                    <Plus size={14} /> Add "{topicSearch.trim()}"
+                  </button>
+                )}
+
+                {/* Custom added topics (not in groups) */}
+                {followedTopics.filter(t => !ALL_SUGGESTED.includes(t)).length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-2">Your Topics</p>
+                    <div className="flex flex-wrap gap-2">
+                      {followedTopics.filter(t => !ALL_SUGGESTED.includes(t)).map(topic => (
+                        <button
+                          key={topic}
+                          data-testid={`follow-custom-${topic.toLowerCase().replace(/\s/g, '-')}`}
+                          onClick={() => toggleItem(followedTopics, setFollowedTopics, topic)}
+                          className="px-4 py-2.5 rounded-xl text-sm font-medium bg-gray-900 text-white shadow-sm transition-all duration-150"
+                        >
+                          <Check size={14} className="inline mr-1" />{topic}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Grouped suggested topics */}
+                <div className="space-y-4">
+                  {filteredGroups.map(group => (
+                    <div key={group.label}>
+                      <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-2">{group.label}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {group.topics.map(topic => (
+                          <button
+                            key={topic}
+                            data-testid={`follow-${topic.toLowerCase().replace(/\s/g, '-')}`}
+                            onClick={() => toggleItem(followedTopics, setFollowedTopics, topic)}
+                            className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                              ${followedTopics.includes(topic)
+                                ? 'bg-gray-900 text-white shadow-sm'
+                                : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                          >
+                            {followedTopics.includes(topic) && <Check size={14} className="inline mr-1" />}
+                            {topic}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
+
                 {followedTopics.length > 0 && (
-                  <p className="text-xs text-gray-400 mt-3">
+                  <p className="text-xs text-gray-400 mt-4">
                     Following {followedTopics.length} topic{followedTopics.length > 1 ? 's' : ''}
                   </p>
                 )}
