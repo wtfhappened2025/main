@@ -1,4 +1,6 @@
+import asyncio
 import httpx
+import feedparser
 import logging
 import os
 import random
@@ -480,25 +482,82 @@ async def fetch_x_trending() -> list:
     return []
 
 
-async def collect_all_trending() -> list:
-    """Collect trending topics from all available sources."""
-    all_topics = []
+RSS_FEEDS = [
+    # Lifestyle & Celebrity
+    {"url": "https://www.tmz.com/rss.xml", "source": "tmz", "category": "entertainment", "label": "TMZ"},
+    {"url": "https://feeds.feedburner.com/people/headlines", "source": "people", "category": "entertainment", "label": "People"},
+    {"url": "https://www.vogue.com/feed/rss", "source": "vogue", "category": "lifestyle", "label": "Vogue"},
+    {"url": "https://www.eonline.com/syndication/feeds/rssfeeds/topstories.xml", "source": "enews", "category": "entertainment", "label": "E! News"},
+    # General News
+    {"url": "https://feeds.bbci.co.uk/news/rss.xml", "source": "bbc", "category": "world_news", "label": "BBC News"},
+    {"url": "https://www.reutersagency.com/feed/", "source": "reuters", "category": "world_news", "label": "Reuters"},
+    {"url": "https://feeds.bbci.co.uk/news/technology/rss.xml", "source": "bbc_tech", "category": "technology", "label": "BBC Tech"},
+    {"url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml", "source": "bbc_science", "category": "science", "label": "BBC Science"},
+]
 
-    sources = [
-        ("CoinGecko", fetch_coingecko_trending),
-        ("Wikipedia", fetch_wikipedia_trending),
-        ("Reddit", fetch_reddit_trending),
-        ("Hacker News", fetch_hackernews_trending),
-        ("Google Trends", fetch_google_trends),
-        ("X/Twitter", fetch_x_trending),
+
+async def fetch_rss_feeds() -> list:
+    """Fetch trending topics from multiple RSS feeds (lifestyle, news, etc.)."""
+    topics = []
+
+    async def _fetch_one_feed(feed_config: dict) -> list:
+        feed_topics = []
+        try:
+            async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+                resp = await client.get(feed_config["url"], headers={"User-Agent": "WTFHappened/1.0"})
+                if resp.status_code != 200:
+                    logger.warning(f"RSS {feed_config['label']} returned {resp.status_code}")
+                    return []
+                feed = feedparser.parse(resp.text)
+                for i, entry in enumerate(feed.entries[:5]):
+                    title = entry.get("title", "").strip()
+                    if not title or len(title) < 10:
+                        continue
+                    feed_topics.append({
+                        "title": title if "?" in title else f"Why: {title}",
+                        "category": feed_config["category"],
+                        "source": feed_config["source"],
+                        "trend_score": max(50, 85 - i * 5),
+                        "raw_data": {
+                            "link": entry.get("link", ""),
+                            "published": entry.get("published", ""),
+                            "feed": feed_config["label"],
+                        },
+                    })
+        except Exception as e:
+            logger.warning(f"RSS {feed_config['label']} fetch failed: {e}")
+        return feed_topics
+
+    results = await asyncio.gather(*[_fetch_one_feed(f) for f in RSS_FEEDS], return_exceptions=True)
+    for result in results:
+        if isinstance(result, list):
+            topics.extend(result)
+    return topics
+
+
+async def collect_all_trending() -> list:
+    """Collect trending topics from all available sources in parallel."""
+    fetchers = [
+        ("CoinGecko", fetch_coingecko_trending()),
+        ("Wikipedia", fetch_wikipedia_trending()),
+        ("Reddit", fetch_reddit_trending()),
+        ("Hacker News", fetch_hackernews_trending()),
+        ("Google Trends", fetch_google_trends()),
+        ("X/Twitter", fetch_x_trending()),
+        ("RSS Feeds", fetch_rss_feeds()),
     ]
 
-    for name, fetcher in sources:
-        try:
-            topics = await fetcher()
-            logger.info(f"Fetched {len(topics)} topics from {name}")
-            all_topics.extend(topics)
-        except Exception as e:
-            logger.warning(f"Failed to fetch from {name}: {e}")
+    results = await asyncio.gather(
+        *[f for _, f in fetchers],
+        return_exceptions=True
+    )
+
+    all_topics = []
+    for (name, _), result in zip(fetchers, results):
+        if isinstance(result, Exception):
+            logger.warning(f"Failed to fetch from {name}: {result}")
+        elif isinstance(result, list):
+            logger.info(f"Fetched {len(result)} topics from {name}")
+            all_topics.extend(result)
 
     return all_topics

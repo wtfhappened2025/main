@@ -165,7 +165,7 @@ async def generate_explanation(topic: str, db=None) -> dict:
 
     # Load prompts from DB if available, else use defaults
     prompts = {}
-    if db:
+    if db is not None:
         prompts = await _load_prompts(db)
 
     p1 = prompts.get("fact_extraction", {})

@@ -12,6 +12,8 @@ const CATEGORY_CONFIG = {
   world_news: { label: 'WORLD', icon: '🌍', color: '#EF4444' },
   internet_culture: { label: 'CULTURE', icon: '🌐', color: '#F43F5E' },
   politics: { label: 'POLITICS', icon: '🏛️', color: '#DC2626' },
+  entertainment: { label: 'CELEB', icon: '🎬', color: '#EC4899' },
+  lifestyle: { label: 'STYLE', icon: '✨', color: '#A855F7' },
 };
 
 export default function TopicCard({ topic, index, onClick }) {

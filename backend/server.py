@@ -6,6 +6,7 @@ import os
 import logging
 import uuid
 import secrets
+import asyncio
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
@@ -13,6 +14,8 @@ from datetime import datetime, timezone, timedelta
 import jwt
 from passlib.context import CryptContext
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 
 from services.ai_engine import generate_explanation, generate_caption
 from services.data_collector import get_seed_topics, SEED_EXPLANATIONS, collect_all_trending
@@ -42,6 +45,10 @@ TRIAL_DAYS = 2
 # Admin config
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@wtfhappened.app")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "WTFadmin2026!")
+
+# Scheduler
+scheduler = AsyncIOScheduler()
+DATA_REFRESH_MINUTES = 10
 
 # --- Auth Models ---
 
@@ -847,6 +854,8 @@ async def render_card(topic_id: str, template_type: str = "standard"):
         "world_news": {"bg": "#FEF2F2", "accent": "#EF4444"},
         "internet_culture": {"bg": "#FFF1F2", "accent": "#F43F5E"},
         "politics": {"bg": "#FEF2F2", "accent": "#DC2626"},
+        "entertainment": {"bg": "#FDF2F8", "accent": "#EC4899"},
+        "lifestyle": {"bg": "#FAF5FF", "accent": "#A855F7"},
     }
 
     category = explanation.get("category", "world_news")
@@ -881,6 +890,204 @@ async def refresh_trending(background_tasks: BackgroundTasks):
     """Trigger a refresh of trending data from external sources."""
     background_tasks.add_task(ingest_trending_data)
     return {"message": "Refresh started"}
+
+# --- Scheduler Status & Control ---
+
+@api_router.get("/scheduler/status")
+async def scheduler_status():
+    """Get the current status of the background data refresh scheduler."""
+    job = scheduler.get_job("data_refresh")
+    if job:
+        next_run = job.next_run_time.isoformat() if job.next_run_time else None
+        return {
+            "running": scheduler.running,
+            "next_run": next_run,
+            "interval_minutes": DATA_REFRESH_MINUTES,
+        }
+    return {"running": False, "next_run": None, "interval_minutes": DATA_REFRESH_MINUTES}
+
+@api_router.get("/admin/scheduler")
+async def admin_scheduler_status(admin=Depends(get_admin_user)):
+    """Admin view of scheduler status with last run info."""
+    job = scheduler.get_job("data_refresh")
+    last_refresh = await db.system_meta.find_one({"key": "last_data_refresh"}, {"_id": 0})
+    pub_job = scheduler.get_job("auto_publisher")
+    last_publish = await db.system_meta.find_one({"key": "last_auto_publish"}, {"_id": 0})
+    return {
+        "data_refresh": {
+            "running": job is not None,
+            "next_run": job.next_run_time.isoformat() if job and job.next_run_time else None,
+            "interval_minutes": DATA_REFRESH_MINUTES,
+            "last_run": last_refresh.get("value") if last_refresh else None,
+        },
+        "auto_publisher": {
+            "running": pub_job is not None,
+            "next_run": pub_job.next_run_time.isoformat() if pub_job and pub_job.next_run_time else None,
+            "last_run": last_publish.get("value") if last_publish else None,
+        },
+    }
+
+# --- Auto Social Media Publisher ---
+
+async def select_top_cards(limit: int = 3) -> list:
+    """Select top-performing explanation cards for publishing."""
+    # Get recent topics with high trend scores that have explanations
+    topics = await db.topics.find(
+        {"trend_score": {"$gte": 70}},
+        {"_id": 0}
+    ).sort("trend_score", -1).limit(limit * 2).to_list(limit * 2)
+
+    publishable = []
+    for topic in topics:
+        explanation = await db.explanations.find_one({"topic_id": topic["id"]}, {"_id": 0})
+        if not explanation:
+            continue
+        # Skip already published
+        already = await db.published_cards.find_one({"topic_id": topic["id"]})
+        if already:
+            continue
+        publishable.append({
+            "topic": topic,
+            "explanation": explanation,
+        })
+        if len(publishable) >= limit:
+            break
+    return publishable
+
+
+async def publish_to_x(title: str, card_1: str, card_2: str, card_3: str, topic_id: str) -> dict:
+    """Publish an explanation card to X/Twitter."""
+    # Requires OAuth 1.0a write credentials (consumer key/secret + access token/secret)
+    x_api_key = os.environ.get("X_API_KEY", "")
+    x_api_secret = os.environ.get("X_API_SECRET", "")
+    x_access_token = os.environ.get("X_ACCESS_TOKEN", "")
+    x_access_secret = os.environ.get("X_ACCESS_SECRET", "")
+
+    if not all([x_api_key, x_api_secret, x_access_token, x_access_secret]):
+        return {"status": "skipped", "reason": "X OAuth 1.0a write credentials not configured"}
+
+    try:
+        import httpx
+        from datetime import datetime, timezone
+        import hashlib
+        import hmac
+        import time
+        import urllib.parse
+        import base64
+
+        # Format tweet
+        tweet_text = f"WTF just happened?\n\n{title}\n\n"
+        tweet_text += f"What: {card_1[:80]}\n"
+        tweet_text += f"Why: {card_2[:80]}\n"
+        tweet_text += f"You: {card_3[:80]}\n\n"
+        tweet_text += "#WTFHappened #Explained"
+
+        if len(tweet_text) > 280:
+            tweet_text = tweet_text[:277] + "..."
+
+        # OAuth 1.0a signature
+        url = "https://api.x.com/2/tweets"
+        method = "POST"
+        timestamp = str(int(time.time()))
+        nonce = uuid.uuid4().hex
+
+        params = {
+            "oauth_consumer_key": x_api_key,
+            "oauth_nonce": nonce,
+            "oauth_signature_method": "HMAC-SHA256",
+            "oauth_timestamp": timestamp,
+            "oauth_token": x_access_token,
+            "oauth_version": "1.0",
+        }
+
+        param_str = "&".join(f"{urllib.parse.quote(k, safe='')}={urllib.parse.quote(v, safe='')}"
+                             for k, v in sorted(params.items()))
+        base_string = f"{method}&{urllib.parse.quote(url, safe='')}&{urllib.parse.quote(param_str, safe='')}"
+        signing_key = f"{urllib.parse.quote(x_api_secret, safe='')}&{urllib.parse.quote(x_access_secret, safe='')}"
+        signature = base64.b64encode(
+            hmac.new(signing_key.encode(), base_string.encode(), hashlib.sha256).digest()
+        ).decode()
+
+        auth_header = (
+            f'OAuth oauth_consumer_key="{urllib.parse.quote(x_api_key, safe="")}", '
+            f'oauth_nonce="{nonce}", '
+            f'oauth_signature="{urllib.parse.quote(signature, safe="")}", '
+            f'oauth_signature_method="HMAC-SHA256", '
+            f'oauth_timestamp="{timestamp}", '
+            f'oauth_token="{urllib.parse.quote(x_access_token, safe="")}", '
+            f'oauth_version="1.0"'
+        )
+
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(
+                url,
+                json={"text": tweet_text},
+                headers={
+                    "Authorization": auth_header,
+                    "Content-Type": "application/json",
+                }
+            )
+            if resp.status_code in (200, 201):
+                data = resp.json()
+                return {"status": "published", "tweet_id": data.get("data", {}).get("id")}
+            else:
+                return {"status": "failed", "error": resp.text[:200], "status_code": resp.status_code}
+
+    except Exception as e:
+        logger.error(f"X publishing failed: {e}")
+        return {"status": "failed", "error": str(e)}
+
+
+async def auto_publish_job():
+    """Background job: select top cards and publish to configured platforms."""
+    try:
+        cards = await select_top_cards(limit=2)
+        if not cards:
+            logging.info("Auto-publisher: No new cards to publish")
+            return
+
+        for item in cards:
+            topic = item["topic"]
+            exp = item["explanation"]
+            results = {}
+
+            # Publish to X/Twitter
+            x_result = await publish_to_x(
+                topic["title"], exp["card_1"], exp["card_2"], exp["card_3"], topic["id"]
+            )
+            results["x_twitter"] = x_result
+
+            # Record publication
+            await db.published_cards.insert_one({
+                "id": str(uuid.uuid4()),
+                "topic_id": topic["id"],
+                "topic_title": topic["title"],
+                "platforms": results,
+                "published_at": datetime.now(timezone.utc).isoformat(),
+            })
+            logging.info(f"Auto-published: {topic['title'][:60]} -> {results}")
+
+        # Update last run timestamp
+        await db.system_meta.update_one(
+            {"key": "last_auto_publish"},
+            {"$set": {"key": "last_auto_publish", "value": datetime.now(timezone.utc).isoformat()}},
+            upsert=True,
+        )
+    except Exception as e:
+        logging.error(f"Auto-publish job failed: {e}")
+
+
+@api_router.get("/admin/published")
+async def admin_published_cards(admin=Depends(get_admin_user)):
+    """Get list of auto-published cards."""
+    cards = await db.published_cards.find({}, {"_id": 0}).sort("published_at", -1).limit(50).to_list(50)
+    return {"published": cards}
+
+@api_router.post("/admin/publish-now")
+async def admin_publish_now(background_tasks: BackgroundTasks, admin=Depends(get_admin_user)):
+    """Manually trigger auto-publisher."""
+    background_tasks.add_task(auto_publish_job)
+    return {"message": "Auto-publish triggered"}
 
 # --- Data Seeding ---
 
@@ -951,6 +1158,12 @@ async def ingest_trending_data():
             await db.topics.insert_one(topic)
             added += 1
         logging.info(f"Ingested {added} new trending topics")
+        # Update last refresh timestamp
+        await db.system_meta.update_one(
+            {"key": "last_data_refresh"},
+            {"$set": {"key": "last_data_refresh", "value": now}},
+            upsert=True,
+        )
     except Exception as e:
         logging.error(f"Trending data ingestion failed: {e}")
 
@@ -973,12 +1186,29 @@ async def startup():
     await db.payment_transactions.create_index("user_id")
     await db.password_resets.create_index("token")
     await db.ai_prompts.create_index("prompt_key")
+    await db.published_cards.create_index("topic_id")
+    await db.system_meta.create_index("key", unique=True)
     # Seed data
     await seed_initial_data()
-    logging.info("WTFHappened API started")
+    # Start background scheduler
+    scheduler.add_job(
+        ingest_trending_data,
+        trigger=IntervalTrigger(minutes=DATA_REFRESH_MINUTES),
+        id="data_refresh",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        auto_publish_job,
+        trigger=IntervalTrigger(minutes=30),
+        id="auto_publisher",
+        replace_existing=True,
+    )
+    scheduler.start()
+    logging.info(f"WTFHappened API started. Data refresh every {DATA_REFRESH_MINUTES}min. Auto-publisher every 30min.")
 
 @app.on_event("shutdown")
 async def shutdown():
+    scheduler.shutdown(wait=False)
     client.close()
 
 # Include router

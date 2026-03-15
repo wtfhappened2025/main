@@ -12,6 +12,8 @@ const CATEGORY_COLORS = {
   world_news: { bg: '#FEF2F2', accent: '#EF4444', text: '#991B1B' },
   internet_culture: { bg: '#FFF1F2', accent: '#F43F5E', text: '#9F1239' },
   politics: { bg: '#FEF2F2', accent: '#DC2626', text: '#991B1B' },
+  entertainment: { bg: '#FDF2F8', accent: '#EC4899', text: '#9D174D' },
+  lifestyle: { bg: '#FAF5FF', accent: '#A855F7', text: '#6B21A8' },
 };
 
 const TEMPLATES = [

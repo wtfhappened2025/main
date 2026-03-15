@@ -12,6 +12,8 @@ const CATEGORIES = [
   { key: 'economy', label: 'Economy' },
   { key: 'crypto', label: 'Crypto' },
   { key: 'science', label: 'Science' },
+  { key: 'entertainment', label: 'Celeb' },
+  { key: 'lifestyle', label: 'Style' },
 ];
 
 export default function TrendingFeed({ onTopicClick }) {

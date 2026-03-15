@@ -31,6 +31,8 @@ const CATEGORY_CONFIG = {
   world_news: { label: 'WORLD', color: '#EF4444' },
   internet_culture: { label: 'CULTURE', color: '#F43F5E' },
   politics: { label: 'POLITICS', color: '#DC2626' },
+  entertainment: { label: 'CELEB', color: '#EC4899' },
+  lifestyle: { label: 'STYLE', color: '#A855F7' },
 };
 
 export default function ExplanationView({ topic, onBack, onShare }) {

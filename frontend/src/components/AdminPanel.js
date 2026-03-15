@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LogOut, Users, FileText, Newspaper, BarChart3, Search,
-  Edit3, Trash2, Plus, Save, X, Loader2, ChevronDown
+  Edit3, Trash2, Plus, Save, X, Loader2, ChevronDown, Clock, Send, RefreshCw
 } from 'lucide-react';
 import api from '@/api';
 
@@ -11,10 +11,12 @@ const ADMIN_TABS = [
   { key: 'users', label: 'Users', icon: Users },
   { key: 'prompts', label: 'AI Prompts', icon: FileText },
   { key: 'topics', label: 'News Feed', icon: Newspaper },
+  { key: 'scheduler', label: 'Scheduler', icon: Clock },
+  { key: 'publisher', label: 'Publisher', icon: Send },
 ];
 
 const CATEGORIES = [
-  'technology', 'finance', 'ai', 'economy', 'crypto', 'science', 'world_news', 'internet_culture', 'politics'
+  'technology', 'finance', 'ai', 'economy', 'crypto', 'science', 'world_news', 'internet_culture', 'politics', 'entertainment', 'lifestyle'
 ];
 
 export default function AdminPanel({ onLogout }) {
@@ -32,18 +34,25 @@ export default function AdminPanel({ onLogout }) {
   const [newTopic, setNewTopic] = useState({ title: '', category: 'technology', trend_score: 50 });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [schedulerData, setSchedulerData] = useState(null);
+  const [publishedCards, setPublishedCards] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (tab === 'overview') loadStats();
     if (tab === 'users') loadUsers();
     if (tab === 'prompts') loadPrompts();
     if (tab === 'topics') loadTopics();
+    if (tab === 'scheduler') loadScheduler();
+    if (tab === 'publisher') loadPublished();
   }, [tab]);
 
   const loadStats = async () => { try { setStats((await api.adminGetStats())); } catch (e) { console.error(e); } };
   const loadUsers = async () => { setLoading(true); try { setUsers((await api.adminGetUsers()).users); } catch (e) { console.error(e); } finally { setLoading(false); } };
   const loadPrompts = async () => { setLoading(true); try { setPrompts((await api.adminGetPrompts()).prompts); } catch (e) { console.error(e); } finally { setLoading(false); } };
   const loadTopics = async () => { setLoading(true); try { setTopics((await api.adminGetTopics()).topics); } catch (e) { console.error(e); } finally { setLoading(false); } };
+  const loadScheduler = async () => { setLoading(true); try { setSchedulerData(await api.adminGetScheduler()); } catch (e) { console.error(e); } finally { setLoading(false); } };
+  const loadPublished = async () => { setLoading(true); try { setPublishedCards((await api.adminGetPublished()).published); } catch (e) { console.error(e); } finally { setLoading(false); } };
 
   const showMsg = (msg) => { setMessage(msg); setTimeout(() => setMessage(''), 3000); };
 
@@ -90,6 +99,26 @@ export default function AdminPanel({ onLogout }) {
       setTopics(prev => prev.filter(t => t.id !== topicId));
       showMsg('Topic deleted');
     } catch (e) { console.error(e); }
+  };
+
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await api.refreshTrending();
+      showMsg('Data refresh triggered');
+      setTimeout(loadScheduler, 2000);
+    } catch (e) { console.error(e); }
+    finally { setRefreshing(false); }
+  };
+
+  const handlePublishNow = async () => {
+    setRefreshing(true);
+    try {
+      await api.adminPublishNow();
+      showMsg('Auto-publish triggered');
+      setTimeout(loadPublished, 3000);
+    } catch (e) { console.error(e); }
+    finally { setRefreshing(false); }
   };
 
   const filteredUsers = users.filter(u =>
@@ -303,6 +332,108 @@ export default function AdminPanel({ onLogout }) {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* SCHEDULER */}
+        {tab === 'scheduler' && (
+          <div className="mt-2 space-y-3">
+            {loading ? <div className="text-center py-10"><Loader2 size={24} className="animate-spin mx-auto text-gray-400" /></div> : schedulerData && (
+              <>
+                <div className="bg-white rounded-2xl border border-gray-100 p-4">
+                  <p className="text-xs font-bold text-gray-500 tracking-widest uppercase mb-3">Data Refresh</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Status</span>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-lg ${schedulerData.data_refresh?.running ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                        {schedulerData.data_refresh?.running ? 'Active' : 'Stopped'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Interval</span>
+                      <span className="text-sm font-semibold text-gray-900">{schedulerData.data_refresh?.interval_minutes} min</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Next Run</span>
+                      <span className="text-xs text-gray-500">{schedulerData.data_refresh?.next_run ? new Date(schedulerData.data_refresh.next_run).toLocaleTimeString() : 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Last Run</span>
+                      <span className="text-xs text-gray-500">{schedulerData.data_refresh?.last_run ? new Date(schedulerData.data_refresh.last_run).toLocaleString() : 'Never'}</span>
+                    </div>
+                  </div>
+                  <button data-testid="manual-refresh-btn" onClick={handleManualRefresh} disabled={refreshing}
+                    className="w-full mt-3 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-60 transition-all">
+                    {refreshing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Refresh Now
+                  </button>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-gray-100 p-4">
+                  <p className="text-xs font-bold text-gray-500 tracking-widest uppercase mb-3">Auto Publisher</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Status</span>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-lg ${schedulerData.auto_publisher?.running ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                        {schedulerData.auto_publisher?.running ? 'Active' : 'Stopped'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Next Run</span>
+                      <span className="text-xs text-gray-500">{schedulerData.auto_publisher?.next_run ? new Date(schedulerData.auto_publisher.next_run).toLocaleTimeString() : 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Last Run</span>
+                      <span className="text-xs text-gray-500">{schedulerData.auto_publisher?.last_run ? new Date(schedulerData.auto_publisher.last_run).toLocaleString() : 'Never'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 rounded-2xl p-4">
+                  <p className="text-xs font-semibold text-amber-800 mb-1">Data Sources Active</p>
+                  <p className="text-[11px] text-amber-700 leading-relaxed">
+                    CoinGecko, Hacker News, Google Trends, X/Twitter, BBC, TMZ, Vogue, E! News, Wikipedia
+                  </p>
+                  <p className="text-[11px] text-amber-600 mt-1">Reddit: Requires OAuth2 credentials</p>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* PUBLISHER */}
+        {tab === 'publisher' && (
+          <div className="mt-2 space-y-3">
+            <button data-testid="publish-now-btn" onClick={handlePublishNow} disabled={refreshing}
+              className="w-full py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-gray-800 disabled:opacity-60 transition-all">
+              {refreshing ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Publish Top Cards Now
+            </button>
+            {loading ? <div className="text-center py-10"><Loader2 size={24} className="animate-spin mx-auto text-gray-400" /></div> : (
+              publishedCards.length === 0 ? (
+                <div className="text-center py-10">
+                  <p className="text-sm text-gray-400">No cards published yet</p>
+                  <p className="text-xs text-gray-300 mt-1">Cards with score 70+ will be auto-published every 30 min</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {publishedCards.map(card => (
+                    <div key={card.id} className="bg-white rounded-xl border border-gray-100 p-3">
+                      <p className="text-sm font-medium text-gray-900 truncate">{card.topic_title}</p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        {Object.entries(card.platforms || {}).map(([platform, result]) => (
+                          <span key={platform} className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase
+                            ${result.status === 'published' ? 'bg-green-50 text-green-600'
+                              : result.status === 'skipped' ? 'bg-yellow-50 text-yellow-600'
+                              : 'bg-red-50 text-red-600'}`}>
+                            {platform}: {result.status}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-1">{new Date(card.published_at).toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+              )
             )}
           </div>
         )}

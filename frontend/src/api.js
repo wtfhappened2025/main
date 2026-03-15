@@ -73,6 +73,12 @@ const api = {
   adminCreateTopic: (data) => axiosAdmin.post('/admin/topics', data).then(r => r.data),
   adminUpdateTopic: (topicId, data) => axiosAdmin.put(`/admin/topics/${topicId}`, data).then(r => r.data),
   adminDeleteTopic: (topicId) => axiosAdmin.delete(`/admin/topics/${topicId}`).then(r => r.data),
+
+  // Admin - Scheduler & Publisher
+  adminGetScheduler: () => axiosAdmin.get('/admin/scheduler').then(r => r.data),
+  adminGetPublished: () => axiosAdmin.get('/admin/published').then(r => r.data),
+  adminPublishNow: () => axiosAdmin.post('/admin/publish-now').then(r => r.data),
+  getSchedulerStatus: () => axios.get(`${API}/scheduler/status`).then(r => r.data),
 };
 
 export default api;
