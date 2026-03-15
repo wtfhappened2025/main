@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Phone, Lock, User, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import api from '@/api';
 
-export default function AuthScreen({ onAuthSuccess }) {
+export default function AuthScreen({ onAuthSuccess, onForgotPassword, onAdminLogin }) {
   const [mode, setMode] = useState('login'); // login | register
   const [authMethod, setAuthMethod] = useState('email'); // email | mobile
   const [name, setName] = useState('');
@@ -208,6 +208,23 @@ export default function AuthScreen({ onAuthSuccess }) {
               </>
             )}
           </button>
+
+          {/* T&C for register */}
+          {mode === 'register' && (
+            <p className="text-[11px] text-gray-400 text-center mt-3">
+              By signing up, you accept our{' '}
+              <button data-testid="terms-link" onClick={() => window.open('/terms', '_blank')}
+                className="text-gray-600 underline hover:text-gray-900">Terms & Conditions</button>
+            </p>
+          )}
+
+          {/* Forgot password for login */}
+          {mode === 'login' && (
+            <button data-testid="forgot-password-link" type="button" onClick={onForgotPassword}
+              className="w-full text-center text-xs text-gray-400 hover:text-gray-600 mt-3 transition-colors">
+              Forgot password?
+            </button>
+          )}
         </form>
 
         {/* Toggle mode */}
@@ -221,6 +238,12 @@ export default function AuthScreen({ onAuthSuccess }) {
             {mode === 'login' ? 'Sign Up' : 'Sign In'}
           </button>
         </p>
+
+        {/* Admin link */}
+        <button data-testid="admin-login-link" onClick={onAdminLogin}
+          className="block mx-auto mt-6 text-[10px] text-gray-300 hover:text-gray-500 transition-colors">
+          Admin Login
+        </button>
       </motion.div>
     </div>
   );
