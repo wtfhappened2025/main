@@ -131,13 +131,6 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
     }
   };
 
-  const filteredGroups = topicSearch
-    ? TOPIC_GROUPS.map(g => ({
-        ...g,
-        topics: g.topics.filter(t => t.toLowerCase().includes(topicSearch.toLowerCase())),
-      })).filter(g => g.topics.length > 0 || g.label.toLowerCase().includes(topicSearch.toLowerCase()))
-    : TOPIC_GROUPS;
-
   const searchMatchesExisting = topicSearch.trim() &&
     ALL_SUGGESTED.some(t => t.toLowerCase() === topicSearch.trim().toLowerCase());
   const searchMatchesFollowed = topicSearch.trim() &&
@@ -429,7 +422,7 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
 
                 {/* Grouped suggested topics */}
                 <div className="space-y-4">
-                  {filteredGroups.map(group => (
+                  {TOPIC_GROUPS.map(group => (
                     <div key={group.label}>
                       <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-2">{group.label}</p>
                       <div className="flex flex-wrap gap-2">
