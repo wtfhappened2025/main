@@ -6,13 +6,13 @@ import api from '@/api';
 const CARD_TABS = [
   { key: 'what', label: 'WHAT', className: 'exp-card-what' },
   { key: 'why', label: 'WHY', className: 'exp-card-why' },
-  { key: 'matters', label: 'MATTERS', className: 'exp-card-matters' },
+  { key: 'matters', label: 'YOU', className: 'exp-card-matters' },
 ];
 
 const CARD_LABELS = {
   what: 'WHAT HAPPENED',
   why: 'WHY IT HAPPENED',
-  matters: 'WHY IT MATTERS',
+  matters: 'WHY IT MATTERS TO YOU',
 };
 
 const LABEL_COLORS = {

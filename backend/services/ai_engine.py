@@ -17,12 +17,13 @@ Rules:
 - Avoid political bias or speculation.
 - Prefer factual reasoning.
 - Maximum 50 words per explanation card.
+- The third card must be PERSONAL — explain why this matters to the reader directly.
 
 All explanations must follow this structure:
 
 Card 1 – What Happened
 Card 2 – Why It Happened
-Card 3 – Why It Matters
+Card 3 – Why It Matters To You
 
 You MUST respond in valid JSON format only. No markdown, no code blocks, no extra text."""
 
@@ -36,10 +37,10 @@ Respond ONLY with this exact JSON structure, no other text:
   "normalized_question": "A clear question form of the topic",
   "card_1": "What happened - explain the event simply (max 50 words)",
   "card_2": "Why it happened - explain the cause (max 50 words)",  
-  "card_3": "Why it matters - explain the impact (max 50 words)",
+  "card_3": "Why it matters to YOU - explain the personal impact on the reader directly, use 'you' and 'your' (max 50 words)",
   "card_1_detail": "Additional context for card 1 (1-2 sentences)",
   "card_2_detail": "Additional context for card 2 (1-2 sentences)",
-  "card_3_detail": "Additional context for card 3 (1-2 sentences)",
+  "card_3_detail": "Additional context about personal impact (1-2 sentences, address the reader directly)",
   "category": "one of: technology, finance, world_news, science, internet_culture, politics, economy, ai, crypto"
 }}"""
 

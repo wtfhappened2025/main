@@ -27,13 +27,19 @@ Build a consumer web app/PWA that explains trending topics on the internet using
 - **Phase 1 Complete**: Core app with all 6 main features
   - Trending feed with 8 seed topics, category filtering, trend scores
   - AI explanation engine (Claude Sonnet via Emergent key)
+  - 3-card system: What Happened / Why It Happened / Why It Matters To You (personalized)
   - Explain This input with suggestions
-  - Save/bookmark system
+  - Save/bookmark system (user-specific)
   - Social card generator with 3 templates (Square, Twitter, Story)
   - Caption generation for social sharing
   - Data collection services (CoinGecko, Wikipedia, Reddit)
   - Full API: /feed, /explanation, /explain, /trending, /save, /saved, /render-card, /refresh-trending, /health
-- **Testing**: 100% backend (13/13), 95% frontend (25/26)
+- **Auth & Onboarding (2026-03-15)**
+  - Email/mobile registration and login (JWT + bcrypt)
+  - 7-step onboarding flow: Welcome, Interests (14 tags), Curiosity Type (6 options), Explanation Depth (3 levels), Location (country+region), Professional Context (5 options, optional), Follow Topics (12 suggested)
+  - Profile menu with logout
+  - Protected save/bookmark endpoints (user-specific)
+- **Testing**: Backend APIs verified, frontend flows tested via screenshots
 
 ## Prioritized Backlog
 ### P0 (Critical)
