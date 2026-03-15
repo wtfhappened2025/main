@@ -67,9 +67,9 @@ Build a consumer web app/PWA that explains trending topics using AI-generated 3-
 - [x] Onboarding Sign Out button fix
 
 ### P1 (Important)
-- [ ] PWA capabilities (service worker, manifest, offline caching, install prompt)
+- [x] PWA capabilities (service worker, manifest, offline caching, install prompt)
+- [x] Personalized feed based on user interests from onboarding ("For You" tab)
 - [ ] Email service for password reset delivery (SendGrid/Resend)
-- [ ] Personalized feed based on user interests from onboarding
 - [ ] Stripe webhook production setup
 - [ ] X/Twitter auto-publish: needs OAuth 1.0a write tokens (X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET)
 
