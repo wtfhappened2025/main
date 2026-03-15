@@ -17,14 +17,20 @@ class WTFHappenedAPITester:
         self.tests_run = 0
         self.tests_passed = 0
         self.test_topic_id = None
+        self.auth_token = None
+        self.test_user_id = None
         
     def log(self, message):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, params=None):
+    def run_test(self, name, method, endpoint, expected_status, data=None, params=None, auth_required=False):
         """Run a single API test"""
         url = f"{self.api_url}/{endpoint}" if not endpoint.startswith('http') else endpoint
         headers = {'Content-Type': 'application/json'}
+        
+        # Add auth header if required and available
+        if auth_required and self.auth_token:
+            headers['Authorization'] = f'Bearer {self.auth_token}'
         
         self.tests_run += 1
         self.log(f"🔍 Testing {name} - {method} {endpoint}")
@@ -34,6 +40,8 @@ class WTFHappenedAPITester:
                 response = requests.get(url, headers=headers, params=params, timeout=30)
             elif method == 'POST':
                 response = requests.post(url, json=data, headers=headers, timeout=30)
+            elif method == 'PUT':
+                response = requests.put(url, json=data, headers=headers, timeout=30)
             
             success = response.status_code == expected_status
             
@@ -56,6 +64,222 @@ class WTFHappenedAPITester:
         except Exception as e:
             self.log(f"❌ {name} - Error: {str(e)}")
             return False, {}
+
+    def test_auth_register_email(self):
+        """Test user registration with email"""
+        timestamp = int(time.time())
+        test_data = {
+            "name": "Test User",
+            "email": f"test{timestamp}@example.com",
+            "password": "testpass123"
+        }
+        
+        success, response = self.run_test(
+            "Register with Email",
+            "POST",
+            "auth/register",
+            200,
+            data=test_data
+        )
+        
+        if success:
+            if 'token' in response and 'user' in response:
+                self.auth_token = response['token']
+                user = response['user']
+                self.test_user_id = user.get('id')
+                
+                self.log(f"   ✓ Registered user: {user.get('name')} ({user.get('email')})")
+                self.log(f"   ✓ Token received: {self.auth_token[:20]}...")
+                self.log(f"   ✓ Onboarding complete: {user.get('onboarding_complete')}")
+                
+                if not user.get('onboarding_complete'):
+                    self.log("   ✓ New user has onboarding_complete=False as expected")
+                else:
+                    self.log("   ⚠️ New user should have onboarding_complete=False")
+                    
+                return True
+            else:
+                self.log("   ⚠️ Response missing token or user data")
+        return success
+
+    def test_auth_register_mobile(self):
+        """Test user registration with mobile"""
+        timestamp = int(time.time())
+        test_data = {
+            "name": "Mobile User",
+            "mobile": f"+1555{timestamp % 10000:04d}",
+            "password": "testpass123"
+        }
+        
+        success, response = self.run_test(
+            "Register with Mobile",
+            "POST",
+            "auth/register",
+            200,
+            data=test_data
+        )
+        
+        if success:
+            if 'token' in response and 'user' in response:
+                user = response['user']
+                self.log(f"   ✓ Registered mobile user: {user.get('name')} ({user.get('mobile')})")
+                return True
+            else:
+                self.log("   ⚠️ Response missing token or user data")
+        return success
+
+    def test_auth_register_duplicate(self):
+        """Test duplicate registration returns 409"""
+        test_data = {
+            "name": "Duplicate User",
+            "email": "test@example.com",  # Known existing user
+            "password": "testpass123"
+        }
+        
+        success, response = self.run_test(
+            "Duplicate Registration",
+            "POST",
+            "auth/register",
+            409,
+            data=test_data
+        )
+        
+        if success:
+            self.log("   ✓ Duplicate registration correctly blocked with 409")
+        
+        return success
+
+    def test_auth_login_valid(self):
+        """Test login with valid credentials"""
+        test_data = {
+            "identifier": "test@example.com",
+            "password": "password123"
+        }
+        
+        success, response = self.run_test(
+            "Login Valid Credentials",
+            "POST",
+            "auth/login",
+            200,
+            data=test_data
+        )
+        
+        if success:
+            if 'token' in response and 'user' in response:
+                self.auth_token = response['token']
+                user = response['user']
+                self.test_user_id = user.get('id')
+                
+                self.log(f"   ✓ Logged in user: {user.get('name')} ({user.get('email')})")
+                self.log(f"   ✓ Token received: {self.auth_token[:20]}...")
+                self.log(f"   ✓ Onboarding complete: {user.get('onboarding_complete')}")
+                
+                return True
+            else:
+                self.log("   ⚠️ Response missing token or user data")
+        return success
+
+    def test_auth_login_invalid(self):
+        """Test login with invalid credentials returns 401"""
+        test_data = {
+            "identifier": "test@example.com",
+            "password": "wrongpassword"
+        }
+        
+        success, response = self.run_test(
+            "Login Invalid Credentials",
+            "POST",
+            "auth/login",
+            401,
+            data=test_data
+        )
+        
+        if success:
+            self.log("   ✓ Invalid credentials correctly rejected with 401")
+        
+        return success
+
+    def test_auth_me(self):
+        """Test /auth/me endpoint with valid token"""
+        if not self.auth_token:
+            self.log("❌ No auth token available for /auth/me test")
+            return False
+            
+        success, response = self.run_test(
+            "Get Current User",
+            "GET",
+            "auth/me",
+            200,
+            auth_required=True
+        )
+        
+        if success:
+            user = response.get('user', {})
+            if user:
+                self.log(f"   ✓ Retrieved user: {user.get('name')} ({user.get('email')})")
+                self.log(f"   ✓ User ID: {user.get('id')}")
+                return True
+            else:
+                self.log("   ⚠️ Response missing user data")
+        return success
+
+    def test_auth_me_no_token(self):
+        """Test /auth/me endpoint without token returns 401"""
+        # Temporarily clear token
+        temp_token = self.auth_token
+        self.auth_token = None
+        
+        success, response = self.run_test(
+            "Get User Without Token",
+            "GET",
+            "auth/me",
+            401
+        )
+        
+        # Restore token
+        self.auth_token = temp_token
+        
+        if success:
+            self.log("   ✓ Unauthorized request correctly rejected with 401")
+        
+        return success
+
+    def test_auth_onboarding(self):
+        """Test saving onboarding preferences"""
+        if not self.auth_token:
+            self.log("❌ No auth token available for onboarding test")
+            return False
+            
+        onboarding_data = {
+            "interests": ["Technology", "AI", "Finance"],
+            "curiosity_types": ["Why markets move", "Why technology changes fast"],
+            "explanation_depth": "moderate",
+            "country": "United States",
+            "region": "California",
+            "professional_context": "Tech professional",
+            "followed_topics": ["OpenAI", "Tesla", "Bitcoin"]
+        }
+        
+        success, response = self.run_test(
+            "Save Onboarding Preferences",
+            "PUT",
+            "auth/onboarding",
+            200,
+            data=onboarding_data,
+            auth_required=True
+        )
+        
+        if success:
+            if response.get('message') == 'Onboarding complete':
+                preferences = response.get('preferences', {})
+                self.log(f"   ✓ Onboarding completed successfully")
+                self.log(f"   ✓ Interests: {len(preferences.get('interests', []))} selected")
+                self.log(f"   ✓ Depth: {preferences.get('explanation_depth')}")
+                self.log(f"   ✓ Location: {preferences.get('country')}")
+                return True
+            else:
+                self.log("   ⚠️ Unexpected onboarding response")
+        return success
 
     def test_health_endpoint(self):
         """Test API health check"""
@@ -175,9 +399,13 @@ class WTFHappenedAPITester:
         return success
 
     def test_save_functionality(self):
-        """Test save/unsave topic functionality"""
+        """Test save/unsave topic functionality with auth"""
         if not self.test_topic_id:
             self.log("❌ No topic ID available for save test")
+            return False
+            
+        if not self.auth_token:
+            self.log("❌ No auth token available for save test")
             return False
             
         # Test saving
@@ -185,7 +413,8 @@ class WTFHappenedAPITester:
             "Save Topic",
             "POST",
             f"save/{self.test_topic_id}",
-            200
+            200,
+            auth_required=True
         )
         
         save_success = False
@@ -201,7 +430,8 @@ class WTFHappenedAPITester:
             "Unsave Topic", 
             "POST",
             f"save/{self.test_topic_id}",
-            200
+            200,
+            auth_required=True
         )
         
         unsave_success = False
@@ -215,12 +445,17 @@ class WTFHappenedAPITester:
         return save_success and unsave_success
 
     def test_saved_endpoint(self):
-        """Test retrieving saved topics"""
+        """Test retrieving saved topics with auth"""
+        if not self.auth_token:
+            self.log("❌ No auth token available for saved topics test")
+            return False
+            
         success, response = self.run_test(
             "Get Saved Topics",
             "GET",
             "saved", 
-            200
+            200,
+            auth_required=True
         )
         
         if success:
@@ -237,8 +472,37 @@ class WTFHappenedAPITester:
                     
         return success
 
+    def test_save_without_auth(self):
+        """Test save endpoint without auth returns 401"""
+        if not self.test_topic_id:
+            self.log("❌ No topic ID available for save without auth test")
+            return False
+            
+        # Temporarily clear token
+        temp_token = self.auth_token
+        self.auth_token = None
+        
+        success, response = self.run_test(
+            "Save Without Auth",
+            "POST",
+            f"save/{self.test_topic_id}",
+            401
+        )
+        
+        # Restore token
+        self.auth_token = temp_token
+        
+        if success:
+            self.log("   ✓ Save without auth correctly rejected with 401")
+        
+        return success
+
     def test_explain_functionality(self):
-        """Test AI explanation generation"""
+        """Test AI explanation generation with auth"""
+        if not self.auth_token:
+            self.log("❌ No auth token available for explain test")
+            return False
+            
         test_input = "Why did Tesla stock drop today?"
         
         success, response = self.run_test(
@@ -246,7 +510,8 @@ class WTFHappenedAPITester:
             "POST",
             "explain",
             200,
-            data={'input': test_input}
+            data={'input': test_input},
+            auth_required=True
         )
         
         if success:

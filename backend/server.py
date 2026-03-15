@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Depends, Header
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -8,7 +8,9 @@ import uuid
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import jwt
+from passlib.context import CryptContext
 
 from services.ai_engine import generate_explanation, generate_caption
 from services.data_collector import get_seed_topics, SEED_EXPLANATIONS, collect_all_trending
@@ -24,7 +26,165 @@ db = client[os.environ['DB_NAME']]
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
-# --- Models ---
+# Auth config
+JWT_SECRET = os.environ.get("JWT_SECRET", uuid.uuid4().hex + uuid.uuid4().hex)
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRY_HOURS = 72
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# --- Auth Models ---
+
+class RegisterRequest(BaseModel):
+    email: Optional[str] = None
+    mobile: Optional[str] = None
+    password: str
+    name: str
+
+class LoginRequest(BaseModel):
+    identifier: str  # email or mobile
+    password: str
+
+class OnboardingRequest(BaseModel):
+    interests: List[str] = []
+    curiosity_types: List[str] = []
+    explanation_depth: str = "simple"
+    country: str = ""
+    region: str = ""
+    professional_context: str = ""
+    followed_topics: List[str] = []
+
+# --- Auth Helpers ---
+
+def create_token(user_id: str) -> str:
+    payload = {
+        "sub": user_id,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRY_HOURS),
+        "iat": datetime.now(timezone.utc),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def verify_token(token: str) -> str:
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload["sub"]
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+async def get_current_user(authorization: Optional[str] = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = authorization.split(" ")[1]
+    user_id = verify_token(token)
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+async def get_optional_user(authorization: Optional[str] = Header(None)):
+    """Returns user if authenticated, None otherwise."""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    try:
+        token = authorization.split(" ")[1]
+        user_id = verify_token(token)
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+        return user
+    except Exception:
+        return None
+
+# --- Auth Routes ---
+
+@api_router.post("/auth/register")
+async def register(req: RegisterRequest):
+    if not req.email and not req.mobile:
+        raise HTTPException(status_code=400, detail="Email or mobile is required")
+
+    # Check existing user
+    query = []
+    if req.email:
+        query.append({"email": req.email.lower().strip()})
+    if req.mobile:
+        query.append({"mobile": req.mobile.strip()})
+
+    existing = await db.users.find_one({"$or": query})
+    if existing:
+        raise HTTPException(status_code=409, detail="User already exists with this email or mobile")
+
+    user_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    user = {
+        "id": user_id,
+        "name": req.name.strip(),
+        "email": req.email.lower().strip() if req.email else None,
+        "mobile": req.mobile.strip() if req.mobile else None,
+        "password_hash": pwd_context.hash(req.password),
+        "onboarding_complete": False,
+        "preferences": {},
+        "created_at": now,
+    }
+    await db.users.insert_one({**user})
+
+    token = create_token(user_id)
+    return {
+        "token": token,
+        "user": {
+            "id": user_id,
+            "name": user["name"],
+            "email": user["email"],
+            "mobile": user["mobile"],
+            "onboarding_complete": False,
+            "preferences": {},
+        }
+    }
+
+@api_router.post("/auth/login")
+async def login(req: LoginRequest):
+    identifier = req.identifier.strip().lower()
+    user = await db.users.find_one({
+        "$or": [{"email": identifier}, {"mobile": identifier}]
+    })
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not pwd_context.verify(req.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    token = create_token(user["id"])
+    return {
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "name": user["name"],
+            "email": user.get("email"),
+            "mobile": user.get("mobile"),
+            "onboarding_complete": user.get("onboarding_complete", False),
+            "preferences": user.get("preferences", {}),
+        }
+    }
+
+@api_router.get("/auth/me")
+async def get_me(user=Depends(get_current_user)):
+    return {"user": user}
+
+@api_router.put("/auth/onboarding")
+async def save_onboarding(req: OnboardingRequest, user=Depends(get_current_user)):
+    preferences = {
+        "interests": req.interests,
+        "curiosity_types": req.curiosity_types,
+        "explanation_depth": req.explanation_depth,
+        "country": req.country,
+        "region": req.region,
+        "professional_context": req.professional_context,
+        "followed_topics": req.followed_topics,
+    }
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"preferences": preferences, "onboarding_complete": True}}
+    )
+    return {"message": "Onboarding complete", "preferences": preferences}
+
+# --- Content Models ---
 
 class TopicOut(BaseModel):
     id: str
@@ -206,20 +366,20 @@ async def get_trending(limit: int = 10):
     return {"trending": topics}
 
 @api_router.post("/save/{topic_id}")
-async def save_topic(topic_id: str):
-    """Save/bookmark a topic."""
+async def save_topic(topic_id: str, user=Depends(get_current_user)):
+    """Save/bookmark a topic for the authenticated user."""
     topic = await db.topics.find_one({"id": topic_id}, {"_id": 0})
     if not topic:
         raise HTTPException(status_code=404, detail="Topic not found")
 
-    existing = await db.saved_topics.find_one({"topic_id": topic_id})
+    existing = await db.saved_topics.find_one({"topic_id": topic_id, "user_id": user["id"]})
     if existing:
-        # Unsave
-        await db.saved_topics.delete_one({"topic_id": topic_id})
+        await db.saved_topics.delete_one({"topic_id": topic_id, "user_id": user["id"]})
         return {"saved": False, "message": "Topic removed from saved"}
 
     saved = {
         "id": str(uuid.uuid4()),
+        "user_id": user["id"],
         "topic_id": topic_id,
         "saved_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -227,9 +387,11 @@ async def save_topic(topic_id: str):
     return {"saved": True, "message": "Topic saved"}
 
 @api_router.get("/saved")
-async def get_saved():
-    """Get all saved topics with their explanations."""
-    saved_items = await db.saved_topics.find({}, {"_id": 0}).sort("saved_at", -1).to_list(100)
+async def get_saved(user=Depends(get_current_user)):
+    """Get saved topics for the authenticated user."""
+    saved_items = await db.saved_topics.find(
+        {"user_id": user["id"]}, {"_id": 0}
+    ).sort("saved_at", -1).to_list(100)
     result = []
     for item in saved_items:
         topic = await db.topics.find_one({"id": item["topic_id"]}, {"_id": 0})
@@ -386,6 +548,10 @@ async def startup():
     await db.topics.create_index("category")
     await db.explanations.create_index("topic_id")
     await db.saved_topics.create_index("topic_id")
+    await db.saved_topics.create_index("user_id")
+    await db.users.create_index("id", unique=True)
+    await db.users.create_index("email", sparse=True)
+    await db.users.create_index("mobile", sparse=True)
     # Seed data
     await seed_initial_data()
     logging.info("WTFHappened API started")
