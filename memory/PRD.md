@@ -1,72 +1,77 @@
 # WTFHappened - Product Requirements Document
 
 ## Original Problem Statement
-Build a consumer web app/PWA that explains trending topics on the internet using AI-generated 3-card explanations (What Happened, Why It Happened, Why It Matters). Based on 11 specification documents covering functional spec, technical spec, AI engine, data sourcing, social card templates, auto-publisher, backend architecture, and best practices.
+Build a consumer web app/PWA that explains trending topics using AI-generated 3-card explanations (What Happened, Why It Happened, Why It Matters To You). Based on 11 specification documents. Personalized explanations addressing the reader directly.
 
 ## Architecture
-- **Frontend**: React 19 + TailwindCSS + Framer Motion (mobile-first PWA-ready)
+- **Frontend**: React 19 + TailwindCSS + Framer Motion (mobile-first)
 - **Backend**: FastAPI (Python) with modular services
-- **Database**: MongoDB (collections: topics, explanations, saved_topics)
-- **AI Engine**: Claude Sonnet via Emergent Universal Key (emergentintegrations library)
+- **Database**: MongoDB (collections: topics, explanations, saved_topics, users, payment_transactions, password_resets, ai_prompts)
+- **AI Engine**: Claude Sonnet via Emergent Universal Key
+- **Payments**: Stripe via emergentintegrations library
 - **Data Sources**: CoinGecko, Wikipedia, Reddit (free public APIs)
 
 ## User Personas
-- **Primary**: Ages 15-35, want quick understanding of trending news/tech/finance/culture
-- **Secondary**: Content creators wanting shareable explanation cards
+- **Consumer**: Ages 15-35, wants quick understanding of trending topics
+- **Content Creator**: Wants shareable explanation cards
+- **Admin**: Manages app content, users, AI prompts
 
-## Core Requirements (Static)
-1. Trending Feed - topics sorted by trend score with category filtering
-2. AI Explanation Engine - 3-card explanations (What/Why/Matters)
-3. Explain This Tool - user pastes headline, gets AI explanation
-4. Trending Confusion Index - topics people are searching/asking about
-5. Social Card Generator - shareable visual cards in multiple formats
-6. Save/Bookmark system
-7. Automatic Social Media Publisher (Phase 2)
+## What's Been Implemented
 
-## What's Been Implemented (2026-03-15)
-- **Phase 1 Complete**: Core app with all 6 main features
-  - Trending feed with 8 seed topics, category filtering, trend scores
-  - AI explanation engine (Claude Sonnet via Emergent key)
-  - 3-card system: What Happened / Why It Happened / Why It Matters To You (personalized)
-  - Explain This input with suggestions
-  - Save/bookmark system (user-specific)
-  - Social card generator with 3 templates (Square, Twitter, Story)
-  - Caption generation for social sharing
-  - Data collection services (CoinGecko, Wikipedia, Reddit)
-  - Full API: /feed, /explanation, /explain, /trending, /save, /saved, /render-card, /refresh-trending, /health
-- **Auth & Onboarding (2026-03-15)**
-  - Email/mobile registration and login (JWT + bcrypt)
-  - 7-step onboarding flow: Welcome, Interests (14 tags), Curiosity Type (6 options), Explanation Depth (3 levels), Location (country+region), Professional Context (5 options, optional), Follow Topics (12 suggested)
-  - Profile menu with logout
-  - Protected save/bookmark endpoints (user-specific)
-- **Testing**: Backend APIs verified, frontend flows tested via screenshots
+### Phase 1 - Core App (2026-03-15)
+- Trending feed with 8 seed topics, category filtering, trend scores
+- AI explanation engine (Claude Sonnet) with 3-card system: What / Why / Why It Matters To You
+- Explain This input with AI-powered explanations
+- Save/bookmark system (user-specific)
+- Social card generator with 3 templates (Square, Twitter, Story)
+- Data collection services (CoinGecko, Wikipedia, Reddit)
+
+### Phase 1.5 - Auth & Onboarding (2026-03-15)
+- Email/mobile registration and login (JWT + bcrypt)
+- 7-step onboarding: Welcome, Interests, Curiosity Type, Depth, Location, Professional Context, Follow Topics
+- Profile menu with logout
+
+### Phase 2 - Advanced Features (2026-03-15)
+- **Forgot/Reset Password**: Token-based flow with email/mobile recovery
+- **Terms & Conditions**: Legal page with acceptance text on registration
+- **Stripe Subscription**: $4.99/month with 2-day free trial, auto-renew toggle, checkout session via Stripe
+- **Settings Page**: 4 tabs - Subscription (plan status, subscribe, auto-renew), Profile (edit name/email/mobile, change password), Preferences (interests, depth), Account (sign out, suspend, delete with confirmation)
+- **Admin Panel**: Separate admin login with 4 sections - Overview (stats dashboard), Users (search, view status, change status), AI Prompts (view/edit system/explanation/caption prompts), News Feed (add/delete topics)
+
+### Testing Results
+- Iteration 1: 100% backend, 95% frontend
+- Iteration 2: 95.2% backend (20/21), 85% frontend (17/20) — no critical bugs
+
+## Admin Credentials
+- Email: admin@wtfhappened.app
+- Password: WTFadmin2026!
 
 ## Prioritized Backlog
-### P0 (Critical)
-- [x] Core trending feed
-- [x] AI explanation engine
-- [x] Explain This tool
-- [x] Save/bookmark
+### P0 (Done)
+- [x] Core trending feed + AI explanations
+- [x] Auth + Onboarding
+- [x] Settings + Subscription
+- [x] Admin Panel
+- [x] Forgot/Reset Password
+- [x] Terms & Conditions
 
 ### P1 (Important)
 - [ ] PWA capabilities (service worker, manifest, offline caching, install prompt)
-- [ ] Real-time data ingestion scheduler (5-10 min intervals)
-- [ ] Topic deduplication and clustering
-- [ ] Trend scoring algorithm improvements
+- [ ] Real-time data ingestion scheduler (every 10 min)
+- [ ] Email service for password reset delivery (SendGrid/Resend)
+- [ ] Personalized feed based on user interests from onboarding
+- [ ] Stripe webhook production setup
 
 ### P2 (Nice to Have)
 - [ ] Automatic Social Media Publisher (X, LinkedIn, Instagram APIs)
-- [ ] User authentication and profiles
-- [ ] Personalization (interest selection, feed prioritization)
 - [ ] Push notifications for trending topics
-- [ ] Image rendering service for social cards (server-side)
+- [ ] Server-side image rendering for social cards
 - [ ] Redis caching layer
 - [ ] NewsAPI integration (requires API key)
-- [ ] Visual generation (charts, timelines) for explanation cards
 
 ## Next Tasks
-1. Add PWA manifest + service worker for installability
-2. Set up scheduled data collection jobs (every 10 min)
-3. Implement topic deduplication across sources
-4. Add user auth (JWT or Google OAuth)
-5. Build auto-publisher system with mock posting
+1. Add PWA manifest + service worker
+2. Set up scheduled data collection (every 10 min)
+3. Integrate email service for password reset delivery
+4. Personalize feed based on user onboarding preferences
+5. Build auto-publisher system (Phase 2 from original spec)
