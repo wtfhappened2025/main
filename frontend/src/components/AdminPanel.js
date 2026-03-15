@@ -25,7 +25,8 @@ export default function AdminPanel({ onLogout }) {
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState(null);
-  const [editText, setEditText] = useState('');
+  const [editSystemPrompt, setEditSystemPrompt] = useState('');
+  const [editTaskPrompt, setEditTaskPrompt] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [showAddTopic, setShowAddTopic] = useState(false);
   const [newTopic, setNewTopic] = useState({ title: '', category: 'technology', trend_score: 50 });
@@ -57,8 +58,13 @@ export default function AdminPanel({ onLogout }) {
   const handleSavePrompt = async (prompt) => {
     setSaving(true);
     try {
-      await api.adminUpdatePrompt(prompt.id, { prompt_key: prompt.prompt_key, prompt_text: editText });
-      setPrompts(prev => prev.map(p => p.id === prompt.id ? { ...p, prompt_text: editText } : p));
+      await api.adminUpdatePrompt(prompt.id, {
+        prompt_key: prompt.prompt_key,
+        system_prompt: editSystemPrompt,
+        task_prompt: editTaskPrompt,
+      });
+      setPrompts(prev => prev.map(p => p.id === prompt.id
+        ? { ...p, system_prompt: editSystemPrompt, task_prompt: editTaskPrompt } : p));
       setEditingPrompt(null);
       showMsg('Prompt updated');
     } catch (e) { console.error(e); }
@@ -193,30 +199,53 @@ export default function AdminPanel({ onLogout }) {
         {/* PROMPTS */}
         {tab === 'prompts' && (
           <div className="mt-2 space-y-3">
+            <p className="text-xs text-gray-400 mb-1">3-step AI pipeline: Fact Extraction → Driver Analysis → Card Generation</p>
             {loading ? <div className="text-center py-10"><Loader2 size={24} className="animate-spin mx-auto text-gray-400" /></div> : (
-              prompts.map(p => (
+              prompts.map((p, idx) => (
                 <div key={p.id} className="bg-white rounded-xl border border-gray-100 p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-bold text-gray-900">{p.label || p.prompt_key}</p>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{p.label || p.prompt_key}</p>
+                      {p.description && <p className="text-[10px] text-gray-400 mt-0.5">{p.description}</p>}
+                    </div>
                     {editingPrompt === p.id ? (
                       <div className="flex gap-1">
                         <button onClick={() => setEditingPrompt(null)} className="p-1 rounded-lg hover:bg-gray-100"><X size={14} /></button>
-                        <button data-testid={`save-prompt-${p.id}`} onClick={() => handleSavePrompt(p)} disabled={saving}
+                        <button data-testid={`save-prompt-${idx}`} onClick={() => handleSavePrompt(p)} disabled={saving}
                           className="p-1 rounded-lg hover:bg-green-100 text-green-600">
                           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                         </button>
                       </div>
                     ) : (
-                      <button data-testid={`edit-prompt-${p.id}`}
-                        onClick={() => { setEditingPrompt(p.id); setEditText(p.prompt_text); }}
+                      <button data-testid={`edit-prompt-${idx}`}
+                        onClick={() => { setEditingPrompt(p.id); setEditSystemPrompt(p.system_prompt || ''); setEditTaskPrompt(p.task_prompt || ''); }}
                         className="p-1 rounded-lg hover:bg-gray-100"><Edit3 size={14} className="text-gray-400" /></button>
                     )}
                   </div>
                   {editingPrompt === p.id ? (
-                    <textarea data-testid={`prompt-textarea-${p.id}`} value={editText} onChange={e => setEditText(e.target.value)}
-                      rows={10} className="w-full text-xs bg-gray-50 border border-gray-200 rounded-lg p-3 outline-none focus:border-gray-400 font-mono resize-y" />
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 tracking-widest uppercase block mb-1">System Prompt</label>
+                        <textarea data-testid={`system-prompt-${idx}`} value={editSystemPrompt} onChange={e => setEditSystemPrompt(e.target.value)}
+                          rows={5} className="w-full text-xs bg-gray-50 border border-gray-200 rounded-lg p-3 outline-none focus:border-gray-400 font-mono resize-y" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 tracking-widest uppercase block mb-1">Task Prompt</label>
+                        <textarea data-testid={`task-prompt-${idx}`} value={editTaskPrompt} onChange={e => setEditTaskPrompt(e.target.value)}
+                          rows={8} className="w-full text-xs bg-gray-50 border border-gray-200 rounded-lg p-3 outline-none focus:border-gray-400 font-mono resize-y" />
+                      </div>
+                    </div>
                   ) : (
-                    <p className="text-xs text-gray-500 font-mono whitespace-pre-wrap line-clamp-4">{p.prompt_text}</p>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-[9px] font-bold text-gray-400 tracking-widest uppercase mb-0.5">System Prompt</p>
+                        <p className="text-xs text-gray-500 font-mono whitespace-pre-wrap line-clamp-3">{p.system_prompt}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-gray-400 tracking-widest uppercase mb-0.5">Task Prompt</p>
+                        <p className="text-xs text-gray-500 font-mono whitespace-pre-wrap line-clamp-3">{p.task_prompt}</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               ))

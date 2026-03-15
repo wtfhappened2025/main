@@ -513,27 +513,38 @@ async def admin_update_user_status(user_id: str, status: str, admin=Depends(get_
 async def admin_get_prompts(admin=Depends(get_admin_user)):
     prompts = await db.ai_prompts.find({}, {"_id": 0}).to_list(50)
     if not prompts:
-        # Seed default prompts from ai_engine
-        from services.ai_engine import SYSTEM_PROMPT, EXPLANATION_PROMPT, CAPTION_PROMPT
-        defaults = [
-            {"id": str(uuid.uuid4()), "prompt_key": "system_prompt", "label": "System Prompt", "prompt_text": SYSTEM_PROMPT},
-            {"id": str(uuid.uuid4()), "prompt_key": "explanation_prompt", "label": "Explanation Prompt", "prompt_text": EXPLANATION_PROMPT},
-            {"id": str(uuid.uuid4()), "prompt_key": "caption_prompt", "label": "Caption Prompt", "prompt_text": CAPTION_PROMPT},
-        ]
-        for p in defaults:
-            await db.ai_prompts.insert_one({**p})
-        prompts = defaults
-    # Clean _id
+        # Seed the 3-prompt pipeline from ai_engine
+        from services.ai_engine import DEFAULT_PROMPTS
+        for p in DEFAULT_PROMPTS:
+            doc = {
+                "id": str(uuid.uuid4()),
+                "prompt_key": p["prompt_key"],
+                "label": p["label"],
+                "description": p["description"],
+                "system_prompt": p["system_prompt"],
+                "task_prompt": p["task_prompt"],
+            }
+            await db.ai_prompts.insert_one({**doc})
+        prompts = await db.ai_prompts.find({}, {"_id": 0}).to_list(50)
     for p in prompts:
         p.pop("_id", None)
     return {"prompts": prompts}
 
+class AdminPromptUpdateV2(BaseModel):
+    prompt_key: str
+    system_prompt: str = ""
+    task_prompt: str = ""
+
 @api_router.put("/admin/prompts/{prompt_id}")
-async def admin_update_prompt(prompt_id: str, req: AdminPromptUpdate, admin=Depends(get_admin_user)):
-    result = await db.ai_prompts.update_one(
-        {"id": prompt_id},
-        {"$set": {"prompt_text": req.prompt_text}}
-    )
+async def admin_update_prompt(prompt_id: str, req: AdminPromptUpdateV2, admin=Depends(get_admin_user)):
+    updates = {}
+    if req.system_prompt:
+        updates["system_prompt"] = req.system_prompt
+    if req.task_prompt:
+        updates["task_prompt"] = req.task_prompt
+    if not updates:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    result = await db.ai_prompts.update_one({"id": prompt_id}, {"$set": updates})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Prompt not found")
     return {"message": "Prompt updated"}
@@ -686,7 +697,7 @@ async def get_explanation(topic_id: str):
             raise HTTPException(status_code=404, detail="Topic not found")
 
         try:
-            ai_result = await generate_explanation(topic["title"])
+            ai_result = await generate_explanation(topic["title"], db=db)
             explanation = {
                 "id": str(uuid.uuid4()),
                 "topic_id": topic_id,
@@ -719,7 +730,7 @@ async def explain_topic(req: ExplainRequest):
         raise HTTPException(status_code=400, detail="Input is required")
 
     try:
-        ai_result = await generate_explanation(user_input)
+        ai_result = await generate_explanation(user_input, db=db)
 
         # Create topic
         topic_id = str(uuid.uuid4())
