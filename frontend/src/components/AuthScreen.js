@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Phone, Lock, User, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import api from '@/api';
 
-export default function AuthScreen({ onAuthSuccess, onForgotPassword, onAdminLogin }) {
+export default function AuthScreen({ onAuthSuccess, onForgotPassword }) {
   const [mode, setMode] = useState('login'); // login | register
   const [authMethod, setAuthMethod] = useState('email'); // email | mobile
   const [name, setName] = useState('');
@@ -238,12 +238,6 @@ export default function AuthScreen({ onAuthSuccess, onForgotPassword, onAdminLog
             {mode === 'login' ? 'Sign Up' : 'Sign In'}
           </button>
         </p>
-
-        {/* Admin link */}
-        <button data-testid="admin-login-link" onClick={onAdminLogin}
-          className="block mx-auto mt-6 text-[10px] text-gray-300 hover:text-gray-500 transition-colors">
-          Admin Login
-        </button>
       </motion.div>
     </div>
   );

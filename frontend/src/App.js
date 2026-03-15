@@ -31,6 +31,25 @@ function App() {
     const stored = localStorage.getItem('wtf_user');
     const token = localStorage.getItem('wtf_token');
     const adminToken = localStorage.getItem('wtf_admin_token');
+    const path = window.location.pathname;
+
+    // Hidden admin route: /admin
+    if (path === '/admin') {
+      if (adminToken) {
+        setView('admin');
+      } else {
+        setView('admin-login');
+      }
+      setAuthChecked(true);
+      return;
+    }
+
+    // Terms page route: /terms
+    if (path === '/terms') {
+      setView('terms');
+      setAuthChecked(true);
+      return;
+    }
 
     // Check URL for payment callback
     const params = new URLSearchParams(window.location.search);
@@ -42,7 +61,7 @@ function App() {
       window.history.replaceState({}, '', window.location.pathname);
     }
 
-    if (adminToken) {
+    if (adminToken && path === '/admin') {
       setView('admin');
       setAuthChecked(true);
       return;
@@ -102,6 +121,7 @@ function App() {
 
   const handleAdminLogout = useCallback(() => {
     localStorage.removeItem('wtf_admin_token');
+    window.history.pushState({}, '', '/');
     setView('auth');
   }, []);
 
@@ -137,9 +157,9 @@ function App() {
     return <div className="app-shell"><TermsPage onBack={() => setView('auth')} /></div>;
   }
 
-  // Admin login
+  // Admin login — only accessible via /admin route
   if (view === 'admin-login') {
-    return <div className="app-shell"><AdminLogin onBack={() => setView('auth')} onAdminAuth={() => setView('admin')} /></div>;
+    return <div className="app-shell"><AdminLogin onBack={() => { window.history.pushState({}, '', '/'); setView('auth'); }} onAdminAuth={() => setView('admin')} /></div>;
   }
 
   // Admin panel
@@ -159,7 +179,6 @@ function App() {
         <AuthScreen
           onAuthSuccess={handleAuthSuccess}
           onForgotPassword={() => setView('forgot')}
-          onAdminLogin={() => setView('admin-login')}
         />
       </div>
     );
