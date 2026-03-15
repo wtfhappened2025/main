@@ -1,0 +1,27 @@
+{
+  "name": "WTFHappened",
+  "short_name": "WTFHappened",
+  "description": "Trending topics explained in 3 cards. No noise, just clarity.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111827",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "https://static.prod-images.emergentagent.com/jobs/512ea475-e75b-49d0-b339-b4aa7f3ce86a/images/3cd11541bed819eb4c32eaee75e1d466e2b1f34e859dced5fc8b3a42a8d918f2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://static.prod-images.emergentagent.com/jobs/512ea475-e75b-49d0-b339-b4aa7f3ce86a/images/761d4da2e61ea046f04899cbe9e2605c00d70ed29f42d03c0c753b6841aca33b.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["news", "education"],
+  "lang": "en"
+}

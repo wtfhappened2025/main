@@ -52,6 +52,7 @@ const api = {
 
   // Content (public)
   getFeed: (category) => axios.get(`${API}/feed`, { params: { limit: 20, category } }).then(r => r.data),
+  getPersonalizedFeed: () => axiosAuth.get('/feed/personalized').then(r => r.data),
   getExplanation: (topicId) => axios.get(`${API}/explanation/${topicId}`).then(r => r.data),
   explain: (input) => axiosAuth.post('/explain', { input }).then(r => r.data),
   getTrending: () => axios.get(`${API}/trending`).then(r => r.data),

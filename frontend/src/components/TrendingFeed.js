@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Sparkles } from 'lucide-react';
 import TopicCard from './TopicCard';
 import api from '@/api';
 
 const CATEGORIES = [
+  { key: 'for-you', label: 'For You' },
   { key: 'all', label: 'All' },
   { key: 'finance', label: 'Markets' },
   { key: 'technology', label: 'Tech' },
@@ -16,19 +17,33 @@ const CATEGORIES = [
   { key: 'lifestyle', label: 'Style' },
 ];
 
-export default function TrendingFeed({ onTopicClick }) {
+export default function TrendingFeed({ onTopicClick, user }) {
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeCategory, setActiveCategory] = useState(
+    user?.onboarding_complete ? 'for-you' : 'all'
+  );
   const [refreshing, setRefreshing] = useState(false);
 
   const loadFeed = async (category) => {
     setLoading(true);
     try {
-      const data = await api.getFeed(category === 'all' ? undefined : category);
-      setTopics(data.topics || []);
+      if (category === 'for-you') {
+        const data = await api.getPersonalizedFeed();
+        setTopics(data.topics || []);
+      } else {
+        const data = await api.getFeed(category === 'all' ? undefined : category);
+        setTopics(data.topics || []);
+      }
     } catch (e) {
       console.error('Feed load failed:', e);
+      // Fallback to regular feed if personalized fails
+      if (category === 'for-you') {
+        try {
+          const data = await api.getFeed();
+          setTopics(data.topics || []);
+        } catch (e2) { console.error('Fallback failed:', e2); }
+      }
     } finally {
       setLoading(false);
     }
@@ -84,11 +99,14 @@ export default function TrendingFeed({ onTopicClick }) {
             data-testid={`category-${cat.key}`}
             onClick={() => setActiveCategory(cat.key)}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap
-              transition-all duration-200
+              transition-all duration-200 flex items-center gap-1
               ${activeCategory === cat.key
-                ? 'bg-gray-900 text-white shadow-sm'
+                ? cat.key === 'for-you'
+                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm'
+                  : 'bg-gray-900 text-white shadow-sm'
                 : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
           >
+            {cat.key === 'for-you' && <Sparkles size={11} />}
             {cat.label}
           </button>
         ))}

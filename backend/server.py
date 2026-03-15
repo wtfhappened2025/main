@@ -693,6 +693,67 @@ async def get_feed(limit: int = 20, category: Optional[str] = None):
 
     return {"topics": topics}
 
+
+@api_router.get("/feed/personalized")
+async def get_personalized_feed(limit: int = 30, user=Depends(get_current_user)):
+    """Get a personalized feed based on user's onboarding preferences."""
+    prefs = user.get("preferences", {})
+    interests = [i.lower() for i in prefs.get("interests", [])]
+    followed = [f.lower() for f in prefs.get("followed_topics", [])]
+
+    # Map interest labels to DB categories
+    interest_to_category = {
+        "technology": "technology", "ai": "ai", "startups": "technology",
+        "finance": "finance", "crypto": "crypto", "business": "economy",
+        "global news": "world_news", "politics": "politics", "science": "science",
+        "space": "science", "health": "science", "psychology": "science",
+        "internet culture": "internet_culture", "memes": "internet_culture",
+        "viral trends": "internet_culture", "celebrities": "entertainment",
+        "movies & tv": "entertainment", "music": "entertainment",
+        "fashion": "lifestyle", "gaming": "technology", "sports": "world_news",
+        "travel": "lifestyle", "food": "lifestyle", "strange news": "world_news",
+        "future tech": "technology",
+    }
+
+    # Build preferred categories from interests
+    preferred_cats = list(set(
+        interest_to_category.get(i, "world_news") for i in interests
+    ))
+
+    # Followed topics -> title keyword search
+    followed_keywords = followed + [i for i in interests if i not in interest_to_category]
+
+    # Score boost pipeline: fetch more, then sort by relevance
+    all_topics = await db.topics.find({}, {"_id": 0}).sort("trend_score", -1).limit(200).to_list(200)
+
+    def relevance_score(topic):
+        score = topic.get("trend_score", 0)
+        cat = topic.get("category", "")
+        title_lower = topic.get("title", "").lower()
+
+        # Boost for matching category
+        if cat in preferred_cats:
+            score += 25
+
+        # Boost for matching followed topics in title
+        for kw in followed_keywords:
+            if kw in title_lower:
+                score += 30
+                break
+
+        return score
+
+    all_topics.sort(key=relevance_score, reverse=True)
+    topics = all_topics[:limit]
+
+    for t in topics:
+        exp = await db.explanations.find_one({"topic_id": t["id"]}, {"_id": 0, "id": 1})
+        t["has_explanation"] = exp is not None
+        t["time_ago"] = time_ago(t.get("created_at", ""))
+        t["personalized"] = True
+
+    return {"topics": topics, "preferences_used": {"categories": preferred_cats, "keywords": followed_keywords[:5]}}
+
 @api_router.get("/explanation/{topic_id}")
 async def get_explanation(topic_id: str):
     """Get explanation cards for a topic."""

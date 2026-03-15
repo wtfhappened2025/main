@@ -13,6 +13,7 @@ import SettingsPage from '@/components/SettingsPage';
 import TermsPage from '@/components/TermsPage';
 import AdminLogin from '@/components/AdminLogin';
 import AdminPanel from '@/components/AdminPanel';
+import InstallPrompt from '@/components/InstallPrompt';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Settings, User } from 'lucide-react';
 import api from '@/api';
@@ -253,7 +254,7 @@ function App() {
           </motion.div>
         ) : (
           <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-            {activeTab === 'trending' && <TrendingFeed onTopicClick={handleTopicClick} />}
+            {activeTab === 'trending' && <TrendingFeed onTopicClick={handleTopicClick} user={user} />}
             {activeTab === 'explain' && <ExplainInput onExplained={handleExplained} />}
             {activeTab === 'saved' && <SavedTopics onTopicClick={handleTopicClick} />}
           </motion.div>
@@ -261,6 +262,7 @@ function App() {
       </AnimatePresence>
 
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+      <InstallPrompt />
 
       <AnimatePresence>
         {socialCard && <SocialCardPreview cardData={socialCard} onClose={() => setSocialCard(null)} />}
