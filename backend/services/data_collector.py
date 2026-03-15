@@ -1,5 +1,6 @@
 import httpx
 import logging
+import os
 import random
 from datetime import datetime, timezone
 
@@ -350,17 +351,111 @@ async def fetch_google_trends() -> list:
     return []
 
 
+async def fetch_x_trending() -> list:
+    """Fetch trending topics and popular posts from X/Twitter API v2."""
+    bearer_token = os.environ.get("X_BEARER_TOKEN", "")
+    if not bearer_token:
+        return []
+
+    try:
+        from urllib.parse import unquote
+        token = unquote(bearer_token)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        topics = []
+        async with httpx.AsyncClient(timeout=15, headers=headers) as client:
+            # 1. Get trending topics for US (WOEID 23424977)
+            try:
+                resp = await client.get(
+                    "https://api.x.com/1.1/trends/place.json",
+                    params={"id": 23424977}
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    trends = data[0].get("trends", []) if data else []
+                    for i, trend in enumerate(trends[:10]):
+                        name = trend.get("name", "")
+                        tweet_volume = trend.get("tweet_volume") or 0
+
+                        # Categorize
+                        name_lower = name.lower()
+                        if any(w in name_lower for w in ["stock", "market", "invest", "earnings", "$"]):
+                            category = "finance"
+                        elif any(w in name_lower for w in ["ai", "gpt", "openai", "chatgpt", "llm"]):
+                            category = "ai"
+                        elif any(w in name_lower for w in ["crypto", "bitcoin", "btc", "eth"]):
+                            category = "crypto"
+                        elif any(w in name_lower for w in ["tech", "apple", "google", "meta", "microsoft"]):
+                            category = "technology"
+                        else:
+                            category = "world_news"
+
+                        score = min(95, max(60, 90 - i * 3))
+                        if tweet_volume and tweet_volume > 100000:
+                            score = min(98, score + 10)
+
+                        topics.append({
+                            "title": name if "?" in name else f"Why is {name} trending on X",
+                            "category": category,
+                            "source": "x_twitter",
+                            "trend_score": score,
+                            "raw_data": {"trend_name": name, "tweet_volume": tweet_volume, "rank": i + 1},
+                        })
+                else:
+                    logger.warning(f"X trends API returned {resp.status_code}: {resp.text[:200]}")
+            except Exception as e:
+                logger.warning(f"X trends endpoint failed: {e}")
+
+            # 2. Fallback: Search recent popular tweets if trends didn't work
+            if not topics:
+                try:
+                    resp = await client.get(
+                        "https://api.x.com/2/tweets/search/recent",
+                        params={
+                            "query": "trending -is:retweet lang:en",
+                            "max_results": 10,
+                            "sort_order": "relevancy",
+                            "tweet.fields": "public_metrics,created_at",
+                        }
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        for i, tweet in enumerate(data.get("data", [])[:8]):
+                            text = tweet.get("text", "")
+                            # Trim to first sentence
+                            title = text.split("\n")[0][:120]
+                            metrics = tweet.get("public_metrics", {})
+                            engagement = metrics.get("like_count", 0) + metrics.get("retweet_count", 0)
+
+                            topics.append({
+                                "title": f"Why: {title}" if "?" not in title else title,
+                                "category": "world_news",
+                                "source": "x_twitter",
+                                "trend_score": min(90, max(55, int(engagement / 100))),
+                                "raw_data": {"tweet_id": tweet.get("id"), "engagement": engagement},
+                            })
+                    else:
+                        logger.warning(f"X search API returned {resp.status_code}: {resp.text[:200]}")
+                except Exception as e:
+                    logger.warning(f"X search endpoint failed: {e}")
+
+        return topics
+    except Exception as e:
+        logger.error(f"X/Twitter fetch failed: {e}")
+    return []
+
+
 async def collect_all_trending() -> list:
     """Collect trending topics from all available sources."""
     all_topics = []
 
-    # Try each source, don't fail if one source is down
     sources = [
         ("CoinGecko", fetch_coingecko_trending),
         ("Wikipedia", fetch_wikipedia_trending),
         ("Reddit", fetch_reddit_trending),
         ("Hacker News", fetch_hackernews_trending),
         ("Google Trends", fetch_google_trends),
+        ("X/Twitter", fetch_x_trending),
     ]
 
     for name, fetcher in sources:
