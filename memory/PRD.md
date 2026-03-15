@@ -4,12 +4,30 @@
 Build a consumer web app/PWA that explains trending topics using AI-generated 3-card explanations (What Happened, Why It Happened, Why It Matters To You). Personalized explanations addressing the reader directly.
 
 ## Architecture
-- **Frontend**: React 19 + TailwindCSS + Framer Motion (mobile-first)
-- **Backend**: FastAPI (Python) with modular services
-- **Database**: MongoDB (collections: topics, explanations, saved_topics, users, payment_transactions, password_resets, ai_prompts, published_cards, system_meta)
+- **Frontend**: React 19 + TailwindCSS + Framer Motion (mobile-first PWA)
+- **Backend**: FastAPI (Python) — modular structure following best practices
+  - `server.py` (78 lines) — app init, middleware, lifecycle
+  - `config.py` — Settings class, centralized env management
+  - `database.py` — MongoDB connection with retry, health check, indexes
+  - `middleware/` — Security headers, request logging, rate limiting
+  - `models/` — Pydantic request/response models
+  - `routes/` — auth.py, content.py, subscription.py, admin.py, system.py
+  - `services/` — ai_engine.py, data_collector.py, publisher.py, scheduler.py
+  - `utils/` — security.py (JWT, auth), helpers.py (shared constants/functions)
+- **Database**: MongoDB
 - **AI Engine**: Claude Sonnet via Emergent Universal Key
 - **Payments**: Stripe via emergentintegrations library
 - **Data Sources**: CoinGecko, Wikipedia, Hacker News, Google Trends, X/Twitter, RSS Feeds (BBC, TMZ, Vogue, E! News)
+
+### Security & Best Practices (implemented 2026-03-15)
+- Security headers: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, HSTS
+- Rate limiting: 10/min on auth endpoints, 60/min default
+- Request logging with X-Request-ID for traceability
+- Global exception handler with standardized error responses
+- CORS configured with specific origins (not wildcard)
+- JWT with cryptographically secure secret
+- .env.example documenting all required variables
+- README.md with full API documentation
 
 ## User Personas
 - **Consumer**: Ages 15-35, wants quick understanding of trending topics
