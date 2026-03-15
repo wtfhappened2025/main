@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Phone, Lock, User, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import api from '@/api';
 
+const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/0qv7i1f2_WTFH%20logo.png';
+
 export default function AuthScreen({ onAuthSuccess, onForgotPassword }) {
   const [mode, setMode] = useState('login'); // login | register
   const [authMethod, setAuthMethod] = useState('email'); // email | mobile
@@ -61,16 +63,14 @@ export default function AuthScreen({ onAuthSuccess, onForgotPassword }) {
       >
         {/* Logo / Brand */}
         <div className="text-center mb-8">
-          <motion.div
+          <motion.img
+            src={LOGO_URL}
+            alt="WTFHappened"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
-            className="w-16 h-16 rounded-2xl bg-gray-900 text-white flex items-center justify-center mx-auto mb-4
-              text-2xl font-black"
-          >
-            W
-          </motion.div>
-          <h1 className="text-2xl font-extrabold text-gray-900">WTFHappened</h1>
+            className="h-20 mx-auto mb-4 object-contain"
+          />
           <p className="text-sm text-gray-400 mt-1">
             {mode === 'login' ? 'Welcome back' : 'Create your account'}
           </p>

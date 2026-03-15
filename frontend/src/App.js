@@ -17,6 +17,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Settings, User } from 'lucide-react';
 import api from '@/api';
 
+const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/0qv7i1f2_WTFH%20logo.png';
+
 function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -147,7 +149,7 @@ function App() {
   if (!authChecked) {
     return (
       <div className="app-shell flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 rounded-2xl bg-gray-900 text-white flex items-center justify-center text-xl font-black animate-pulse">W</div>
+        <img src={LOGO_URL} alt="WTFHappened" className="h-12 object-contain animate-pulse" />
       </div>
     );
   }
@@ -186,7 +188,7 @@ function App() {
 
   // Onboarding
   if (view === 'onboarding' || !user.onboarding_complete) {
-    return <div className="app-shell"><OnboardingFlow user={user} onComplete={handleOnboardingComplete} /></div>;
+    return <div className="app-shell"><OnboardingFlow user={user} onComplete={handleOnboardingComplete} onLogout={handleLogout} /></div>;
   }
 
   // Settings

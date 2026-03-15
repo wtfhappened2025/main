@@ -130,7 +130,7 @@ export default function AdminPanel({ onLogout }) {
       {/* Top bar */}
       <div className="bg-white border-b border-gray-100 px-5 py-3 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-sm font-black">W</div>
+          <img src="https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/0qv7i1f2_WTFH%20logo.png" alt="WTFHappened" className="h-7 object-contain" />
           <span className="text-sm font-bold text-gray-900">Admin</span>
         </div>
         <button data-testid="admin-logout" onClick={onLogout}

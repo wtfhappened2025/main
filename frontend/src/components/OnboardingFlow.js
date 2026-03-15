@@ -15,17 +15,28 @@ const STEPS = [
 
 const INTERESTS = [
   'Technology', 'AI', 'Startups', 'Finance', 'Crypto',
-  'Global News', 'Politics', 'Science', 'Business',
-  'Internet Culture', 'Sports', 'Climate', 'Space', 'Health',
+  'Business', 'Global News', 'Politics', 'Science', 'Space',
+  'Health', 'Psychology', 'Internet Culture', 'Memes',
+  'Viral Trends', 'Celebrities', 'Movies & TV', 'Music',
+  'Fashion', 'Gaming', 'Sports', 'Travel', 'Food',
+  'Strange News', 'Future Tech',
 ];
 
 const CURIOSITY_TYPES = [
   'Why markets move',
-  'Why countries fight',
   'Why companies succeed or fail',
-  'Why technology changes fast',
-  'Why things go viral online',
+  'Why technology changes so fast',
+  'Why countries fight',
   'Why the economy changes',
+  'Why things go viral online',
+  'Why memes explode',
+  'Why celebrities trend',
+  'Why influencers get famous',
+  'Why startups suddenly explode',
+  'Why society trends change',
+  'Why people believe strange things',
+  'Why random weird things happen',
+  'Why internet stories spread',
 ];
 
 const DEPTH_OPTIONS = [
@@ -52,7 +63,9 @@ const COUNTRIES = [
   'Kenya', 'Other',
 ];
 
-export default function OnboardingFlow({ user, onComplete }) {
+const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/0qv7i1f2_WTFH%20logo.png';
+
+export default function OnboardingFlow({ user, onComplete, onLogout }) {
   const [step, setStep] = useState(0);
   const [interests, setInterests] = useState([]);
   const [curiosityTypes, setCuriosityTypes] = useState([]);
@@ -149,6 +162,19 @@ export default function OnboardingFlow({ user, onComplete }) {
         </div>
       )}
 
+      {/* Welcome step: back/logout button */}
+      {step === 0 && (
+        <div className="flex justify-end">
+          <button
+            data-testid="onboarding-logout"
+            onClick={onLogout}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+      )}
+
       {/* Step content */}
       <div className="flex-1">
         <AnimatePresence mode="wait">
@@ -162,15 +188,14 @@ export default function OnboardingFlow({ user, onComplete }) {
             {/* Step 0: Welcome */}
             {step === 0 && (
               <div className="text-center pt-16">
-                <motion.div
+                <motion.img
+                  src={LOGO_URL}
+                  alt="WTFHappened"
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-                  className="w-20 h-20 rounded-3xl bg-gray-900 text-white flex items-center justify-center
-                    mx-auto mb-6 text-3xl font-black"
-                >
-                  W
-                </motion.div>
+                  className="h-20 mx-auto mb-6 object-contain"
+                />
                 <h1 className="text-2xl font-extrabold text-gray-900 leading-snug mb-3">
                   Understand what's<br />happening in the world<br />in 30 seconds
                 </h1>
