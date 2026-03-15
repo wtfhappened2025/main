@@ -36,7 +36,7 @@ async def fetch_coingecko_trending() -> list:
                     price_change = item.get("data", {}).get("price_change_percentage_24h", {}).get("usd", 0)
                     direction = "surging" if price_change and price_change > 0 else "dropping"
                     topics.append({
-                        "title": f"Why {name} ({symbol}) is {direction} today",
+                        "title": f"{name} ({symbol}) is {direction} today",
                         "category": "crypto",
                         "source": "coingecko",
                         "trend_score": max(60, 95 - score * 5),
@@ -69,7 +69,7 @@ async def fetch_wikipedia_trending() -> list:
                     clean_title = title.replace("_", " ")
                     views = article.get("views", 0)
                     topics.append({
-                        "title": f"Why is {clean_title} trending right now",
+                        "title": clean_title,
                         "category": "world_news",
                         "source": "wikipedia",
                         "trend_score": min(95, max(50, int(views / 10000))),
@@ -102,7 +102,7 @@ async def fetch_reddit_trending() -> list:
                             score = pdata.get("score", 0)
                             cat = "technology" if sub == "technology" else "science" if sub == "science" else "world_news"
                             topics.append({
-                                "title": title if "?" in title else f"Why: {title}",
+                                "title": title,
                                 "category": cat,
                                 "source": f"reddit/{sub}",
                                 "trend_score": min(95, max(55, int(score / 500))),
@@ -120,7 +120,7 @@ def get_seed_topics() -> list:
     """Return seed topics for initial app population."""
     return [
         {
-            "title": "Why Nvidia stock exploded today",
+            "title": "Nvidia stock exploded today",
             "category": "finance",
             "source": "seed",
             "trend_score": 94,
@@ -162,7 +162,7 @@ def get_seed_topics() -> list:
             "trend_score": 73,
         },
         {
-            "title": "Why is the internet obsessed with the Hawk Tuah girl",
+            "title": "The internet is obsessed with the Hawk Tuah girl",
             "category": "internet_culture",
             "source": "seed",
             "trend_score": 85,
@@ -172,7 +172,7 @@ def get_seed_topics() -> list:
 
 # Seed explanations matching the seed topics
 SEED_EXPLANATIONS = {
-    "Why Nvidia stock exploded today": {
+    "Nvidia stock exploded today": {
         "card_1": "Nvidia posted record quarterly earnings, crushing Wall Street estimates.",
         "card_2": "AI chip demand surged as tech companies race to build AI infrastructure.",
         "card_3": "If you own tech stocks or index funds, your portfolio likely jumped. If you work in tech, your industry just got a massive confidence boost.",
@@ -235,7 +235,7 @@ SEED_EXPLANATIONS = {
         "card_3_detail": "If confirmed, this reshapes everything — from your philosophy about humanity's place in the cosmos to how governments fund space exploration with your tax dollars.",
         "category": "science",
     },
-    "Why is the internet obsessed with the Hawk Tuah girl": {
+    "The internet is obsessed with the Hawk Tuah girl": {
         "card_1": "A street interview clip went mega-viral for its unexpected and hilarious answer.",
         "card_2": "The internet's algorithm-driven culture can turn anyone into an overnight sensation.",
         "card_3": "Your next viral moment could be one clip away. This shows how the algorithm can change anyone's life overnight — including yours.",
@@ -285,7 +285,7 @@ async def fetch_hackernews_trending() -> list:
                         category = "technology"
 
                     topics.append({
-                        "title": title if "?" in title else f"Why: {title}",
+                        "title": title,
                         "category": category,
                         "source": "hackernews",
                         "trend_score": min(95, max(55, int(score / 50))),
@@ -332,7 +332,7 @@ async def fetch_google_trends() -> list:
                 news_title = html.unescape(news_title) if news_title else ""
 
                 # Use news headline if available, otherwise the query
-                display_title = news_title if news_title else f"Why is '{query}' trending right now"
+                display_title = news_title if news_title else query
 
                 # Parse traffic for score
                 traffic_num = 0
@@ -340,7 +340,7 @@ async def fetch_google_trends() -> list:
                     traffic_num = int(re.sub(r'[^0-9]', '', traffic) or 0)
 
                 topics.append({
-                    "title": display_title if "?" in display_title else f"Why: {display_title}",
+                    "title": display_title,
                     "category": "world_news",
                     "source": "google_trends",
                     "trend_score": min(95, max(60, 90 - i * 3)),
@@ -397,7 +397,7 @@ async def fetch_x_trending() -> list:
                             score = min(98, score + 10)
 
                         topics.append({
-                            "title": name if "?" in name else f"Why is {name} trending on X",
+                            "title": name,
                             "category": category,
                             "source": "x_twitter",
                             "trend_score": score,
@@ -460,7 +460,7 @@ async def fetch_x_trending() -> list:
                                     category = "world_news"
 
                                 topics.append({
-                                    "title": title if "?" in title else f"Why: {title}",
+                                    "title": title,
                                     "category": category,
                                     "source": "x_twitter",
                                     "trend_score": min(90, max(55, int(engagement / 100))),
@@ -514,7 +514,7 @@ async def fetch_rss_feeds() -> list:
                     if not title or len(title) < 10:
                         continue
                     feed_topics.append({
-                        "title": title if "?" in title else f"Why: {title}",
+                        "title": title,
                         "category": feed_config["category"],
                         "source": feed_config["source"],
                         "trend_score": max(50, 85 - i * 5),
