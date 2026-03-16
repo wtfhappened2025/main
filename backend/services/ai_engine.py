@@ -57,7 +57,7 @@ Respond ONLY with this exact JSON structure, no other text:
 PROMPT_3_SYSTEM = """You are an expert explainer for the WTFHappened app. Generate three short explanation cards that help users understand:
 1. What happened
 2. Why it happened
-3. Why it matters to them
+3. Why it matters to them — split into "How it affects me" and "What should I do"
 
 Rules:
 - Each card must contain 3-4 bullet points
@@ -65,7 +65,7 @@ Rules:
 - Use simple language
 - Avoid jargon
 - Focus on clarity and usefulness
-- Card 3 must be PERSONAL — use "you" and "your" to address the reader directly"""
+- Card 3 MUST be split into two sections: "affects" (how this impacts the reader personally) and "action" (concrete steps the reader can take). Use "you" and "your" to address the reader directly."""
 
 PROMPT_3_TASK = """Transform this analysis into three user-facing explanation cards.
 
@@ -83,8 +83,8 @@ Respond ONLY with this exact JSON structure, no other text:
   "card_1_points": ["point1", "point2", "point3"],
   "card_2_title": "Why It Happened",
   "card_2_points": ["point1", "point2", "point3"],
-  "card_3_title": "Why It Matters to You",
-  "card_3_points": ["point1", "point2", "point3"],
+  "card_3_affects": ["How this affects you point1", "How this affects you point2", "How this affects you point3"],
+  "card_3_action": ["What you should do point1", "What you should do point2", "What you should do point3"],
   "category": "one of: technology, finance, world_news, science, internet_culture, politics, economy, ai, crypto"
 }}"""
 
