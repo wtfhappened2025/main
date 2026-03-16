@@ -15,6 +15,7 @@ from utils.security import (
     get_current_user, audit_log,
 )
 from utils.helpers import safe_user
+from services.email_service import send_password_reset_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -140,7 +141,11 @@ async def forgot_password(req: ForgotPasswordRequest, request: Request):
         "used": False,
     })
     await audit_log("password_reset_requested", {"identifier": identifier}, user_id=user["id"], ip=request.client.host)
-    return {"message": "If an account exists, a reset link has been sent.", "reset_token": reset_token}
+    # Send email if user has an email address
+    email_result = {"status": "skipped", "reason": "No email on account"}
+    if user.get("email"):
+        email_result = await send_password_reset_email(user["email"], reset_token)
+    return {"message": "If an account exists, a reset link has been sent.", "email_sent": email_result.get("status") == "sent"}
 
 
 @router.post("/reset-password")

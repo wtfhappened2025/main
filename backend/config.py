@@ -56,6 +56,10 @@ class Settings:
     X_ACCESS_SECRET: str = _optional("X_ACCESS_SECRET")
     X_BEARER_TOKEN: str = _optional("X_BEARER_TOKEN")
 
+    # Resend (email)
+    RESEND_API_KEY: str = _optional("RESEND_API_KEY")
+    SENDER_EMAIL: str = _optional("SENDER_EMAIL", "onboarding@resend.dev")
+
     # Environment
     ENVIRONMENT: str = _optional("ENVIRONMENT", "production")
     DEBUG: bool = ENVIRONMENT == "development"

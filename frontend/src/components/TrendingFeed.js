@@ -5,7 +5,7 @@ import TopicCard from './TopicCard';
 import api from '@/api';
 
 const CATEGORIES = [
-  { key: 'for-you', label: 'For You' },
+  { key: 'for-you', label: 'Your News' },
   { key: 'all', label: 'All' },
   { key: 'finance', label: 'Markets' },
   { key: 'technology', label: 'Tech' },

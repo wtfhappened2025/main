@@ -19,9 +19,9 @@ export default function ForgotPassword({ onBack }) {
     setLoading(true); setError('');
     try {
       const res = await api.forgotPassword(identifier.trim());
-      setMessage(res.message);
-      // For demo, show the token if returned
-      if (res.reset_token) setResetToken(res.reset_token);
+      setMessage(res.email_sent
+        ? 'We sent a reset code to your email. Check your inbox.'
+        : 'If an account exists, a reset link has been sent.');
       setStep('token');
     } catch (err) {
       setError(err.response?.data?.detail || 'Something went wrong');
@@ -87,11 +87,11 @@ export default function ForgotPassword({ onBack }) {
 
           {step === 'token' && (
             <motion.div key="token" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <h2 className="text-xl font-extrabold text-gray-900 mb-1">Enter reset token</h2>
+              <h2 className="text-xl font-extrabold text-gray-900 mb-1">Check your email</h2>
               <p className="text-sm text-gray-400 mb-6">{message}</p>
               <form onSubmit={handleResetPassword} className="space-y-3">
                 <input data-testid="reset-token-input" type="text" value={resetToken}
-                  onChange={e => setResetToken(e.target.value)} placeholder="Paste reset token"
+                  onChange={e => setResetToken(e.target.value)} placeholder="Paste reset code from email"
                   className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-gray-400 transition-all" />
                 <div className="relative">
                   <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
