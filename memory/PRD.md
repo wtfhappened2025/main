@@ -94,8 +94,6 @@ Build a consumer web app/PWA that explains trending topics using AI-generated 3-
 - [x] PWA capabilities (service worker, manifest, offline caching, install prompt)
 - [x] Personalized feed based on user interests from onboarding ("Your News" tab, default for logged-in users)
 - [x] Email service for password reset delivery (Resend API — test mode, needs verified domain for production)
-- [ ] Stripe webhook production setup
-- [ ] X/Twitter auto-publish: needs OAuth 1.0a write tokens (X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET)
 
 ### P2 (Nice to Have)
 - [ ] Reddit integration (requires OAuth2 credentials from user)
@@ -106,8 +104,12 @@ Build a consumer web app/PWA that explains trending topics using AI-generated 3-
 - [ ] Social media publishing for Instagram/Facebook
 - [ ] Card-to-video generator for TikTok
 
+### P3 (Backlog — Production Setup)
+- [ ] Stripe webhook production setup
+- [ ] X/Twitter OAuth 1.0a write tokens for live auto-publishing
+- [ ] Verify a domain in Resend for production email delivery
+
 ## Next Tasks
-1. PWA manifest + service worker
-2. Personalize feed based on user onboarding preferences
-3. Email service for password reset delivery
-4. Get X/Twitter OAuth 1.0a write tokens from user for auto-publishing
+1. Comprehensive test suite (target >60% coverage)
+2. Reddit integration (if OAuth2 credentials provided)
+3. Push notifications for trending topics
