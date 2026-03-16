@@ -20,96 +20,104 @@ Build a consumer web app/PWA that explains trending topics using AI-generated 3-
 - **Data Sources**: CoinGecko, Wikipedia, Hacker News, Google Trends, X/Twitter, RSS Feeds (BBC, TMZ, Vogue, E! News)
 
 ### Security & Best Practices (implemented 2026-03-15/16)
-- Security headers: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, HSTS, Cache-Control: no-store for API
-- Rate limiting: 10/min on auth endpoints, 5/min per user on AI endpoints, 60/min default
-- Request logging with X-Request-ID for traceability
-- Global exception handler with standardized error responses
-- CORS configured with specific origins (not wildcard)
-- JWT with persisted cryptographic secret (fail-fast if missing)
-- JWT refresh token flow with rotation (old tokens invalidated on use)
-- Security audit logging: every auth event logged to DB (login, register, password reset, failures)
-- API usage tracking: monitors AI/expensive endpoint calls with hourly/daily stats
-- Admin endpoints: /admin/audit-log, /admin/api-usage for security monitoring
-- No hardcoded secrets — ADMIN_PASSWORD, JWT_SECRET required in .env (fail-fast)
-- MongoDB connection pooling (maxPoolSize=20, minPoolSize=2)
-- .env.example documenting all required variables
-- README.md with full API documentation
+- Security headers, rate limiting, request logging, JWT with refresh tokens
+- Security audit logging, API usage tracking
+- No hardcoded secrets — fail-fast config
 
 ## User Personas
 - **Consumer**: Ages 15-35, wants quick understanding of trending topics
 - **Content Creator**: Wants shareable explanation cards
 - **Admin**: Manages app content, users, AI prompts, scheduler
 
+## App Flow
+1. **Splash Screen** (`SplashScreen.js`) → animated gradient + floating emojis + CTA
+2. **Auth** (`AuthScreen.js`) → sign up / sign in
+3. **Onboarding** (`OnboardingFlow.js`) → 7-step user preferences
+4. **Home Dashboard** (`HomePage.js`) → stats + top 3 topics + "Browse All Topics"
+5. **News Feed** (`TrendingFeed.js`) → full mosaic feed with cards (swipe, bookmark, reactions)
+6. **Explanation View** (`ExplanationView.js`) → 3 cards: WHAT / WHY / YOU (split into affects + action)
+
 ## What's Been Implemented
 
 ### Phase 1 - Core App
 - Trending feed with seed topics, category filtering, trend scores
-- AI explanation engine (Claude Sonnet) with 3-card system: What / Why / Why It Matters To You
+- AI explanation engine (Claude Sonnet) with 3-card system
 - Explain This input with AI-powered explanations
 - Save/bookmark system (user-specific)
-- Social card generator with 3 templates (Square, Twitter, Story)
-- Data collection services (CoinGecko, Wikipedia, Hacker News, Google Trends, X/Twitter)
+- Social card generator with 3 templates
 
 ### Phase 1.5 - Auth & Onboarding
 - Email/mobile registration and login (JWT + bcrypt)
-- 7-step onboarding: Welcome, Interests (25 items), Curiosity Type (14 items), Depth, Location, Professional Context, Follow Topics
+- 7-step onboarding
 - Profile menu with logout
-- Sign Out button on onboarding welcome screen
 
 ### Phase 2 - Advanced Features
-- Forgot/Reset Password: Token-based flow
+- Forgot/Reset Password with Resend email delivery
 - Terms & Conditions page
-- Stripe Subscription: $4.99/month with 2-day free trial
-- Settings Page: 4 tabs (Subscription, Profile, Preferences, Account)
-- Admin Panel: 6 tabs (Overview, Users, AI Prompts, News Feed, Scheduler, Publisher)
+- Stripe Subscription: $4.99/month
+- Settings Page: 4 tabs
+- Admin Panel: 6 tabs
 
-### Phase 3 - Data Sources & Automation (2026-03-15)
-- RSS feed integration: TMZ, Vogue, E! News, BBC News, BBC Tech, BBC Science
-- Parallel data collection using asyncio.gather
-- Background scheduler: Auto-refresh data every 10 minutes
-- Auto-publisher infrastructure: Selects top cards (score >= 70) and publishes to X/Twitter every 30 minutes
-- New categories: entertainment, lifestyle
-- Category filters updated: Celeb, Style tabs added
-- Custom logo integration across all screens
+### Phase 3 - Data Sources & Automation
+- RSS feed integration (TMZ, Vogue, E! News, BBC)
+- Parallel data collection, background scheduler
+- Auto-publisher infrastructure
+
+### Phase 4 - Security Hardening (2026-03-15/16)
+- Modular backend refactor
+- JWT refresh tokens, audit logging, API usage tracking
+- Per-user rate limiting, security headers
+
+### Phase 5 - UX Redesign (2026-03-16)
+- Dashboard mosaic feed with 3D-tilt cards, sparklines
+- Swipe-to-dismiss on cards
+- Bookmark/save button on each card
+- Emoji reactions (fire, shocked, mindblown, angry) with toggle + counts
+- "Read in 3 cards" CTA on cards
+- Split "You" card into "How it affects you" + "What you should do"
+- Splash screen (animated gradient, floating emojis, CTA)
+- Home dashboard page (stats, top 3 topics, Browse All Topics)
+- Renamed TRENDING tab to HOME in bottom nav
+- PWA capabilities (manifest, service worker, install prompt)
+- Personalized "Your News" feed
 
 ## Admin Credentials
 - Email: admin@wtfhappened.app
 - Password: WTFadmin2026!
 
 ## Prioritized Backlog
-### P0 (Done)
-- [x] Core trending feed + AI explanations
-- [x] Auth + Onboarding (25 interests, 14 curiosity types)
-- [x] Settings + Subscription
-- [x] Admin Panel (6 tabs)
-- [x] Forgot/Reset Password
-- [x] Terms & Conditions
-- [x] RSS feed data sources (lifestyle/news)
-- [x] Background scheduler (10-min auto-refresh)
-- [x] Auto-publisher infrastructure
-- [x] Custom logo integration
-- [x] Onboarding Sign Out button fix
 
-### P1 (Important)
-- [x] PWA capabilities (service worker, manifest, offline caching, install prompt)
-- [x] Personalized feed based on user interests from onboarding ("Your News" tab, default for logged-in users)
-- [x] Email service for password reset delivery (Resend API — test mode, needs verified domain for production)
+### P0 (Done)
+- [x] All core features implemented
+- [x] Full page flow: Splash → Auth → Onboarding → Home → Feed
+- [x] Card interactions: swipe, bookmark, emoji reactions
+- [x] Split "You" card into affects + action sections
+- [x] Security hardening + modular backend
+
+### P1 (Next)
+- [ ] Auto social media publishing (X/Twitter) — scheduler job exists, calls placeholder
+- [ ] Push notifications for trending topics
+- [ ] Comprehensive test suite (>60% coverage)
 
 ### P2 (Nice to Have)
-- [ ] Reddit integration (requires OAuth2 credentials from user)
-- [ ] Push notifications for trending topics
+- [ ] Reddit integration (requires OAuth2 credentials)
 - [ ] Server-side image rendering for social cards
 - [ ] Redis caching layer
-- [ ] NewsAPI, YouTube Trending, TMDb integration (requires API keys)
-- [ ] Social media publishing for Instagram/Facebook
-- [ ] Card-to-video generator for TikTok
+- [ ] Extract TopicCard from TrendingFeed.js into own component
 
 ### P3 (Backlog — Production Setup)
 - [ ] Stripe webhook production setup
-- [ ] X/Twitter OAuth 1.0a write tokens for live auto-publishing
-- [ ] Verify a domain in Resend for production email delivery
+- [ ] X/Twitter OAuth 1.0a write tokens
+- [ ] Verify Resend domain for production email
+- [ ] Cloud secret manager integration
+- [ ] IP allowlisting for external API keys
 
-## Next Tasks
-1. Comprehensive test suite (target >60% coverage)
-2. Reddit integration (if OAuth2 credentials provided)
-3. Push notifications for trending topics
+## Key API Endpoints
+- `/api/auth/register`, `/api/auth/login`, `/api/auth/forgot-password`
+- `/api/token/refresh`
+- `/api/feed`, `/api/feed/personalized`
+- `/api/explanation/{topic_id}`, `/api/explain`
+- `/api/react/{topic_id}`, `/api/reactions/mine`
+- `/api/save/{topic_id}`, `/api/saved`
+- `/api/dismiss/{topic_id}`
+- `/api/admin/*`
