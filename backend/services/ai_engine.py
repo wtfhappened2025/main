@@ -212,16 +212,19 @@ async def generate_explanation(topic: str, db=None) -> dict:
     # Convert points-based format to text format for compatibility
     card_1_points = cards.get("card_1_points", [])
     card_2_points = cards.get("card_2_points", [])
-    card_3_points = cards.get("card_3_points", [])
+    card_3_affects = cards.get("card_3_affects", [])
+    card_3_action = cards.get("card_3_action", [])
 
     return {
         "normalized_question": cards.get("normalized_question", topic),
         "card_1": " ".join(card_1_points[:2]) if card_1_points else cards.get("card_1", ""),
         "card_2": " ".join(card_2_points[:2]) if card_2_points else cards.get("card_2", ""),
-        "card_3": " ".join(card_3_points[:2]) if card_3_points else cards.get("card_3", ""),
+        "card_3": " ".join(card_3_affects[:2]) if card_3_affects else cards.get("card_3", ""),
         "card_1_detail": " ".join(card_1_points[2:]) if len(card_1_points) > 2 else cards.get("card_1_detail", ""),
         "card_2_detail": " ".join(card_2_points[2:]) if len(card_2_points) > 2 else cards.get("card_2_detail", ""),
-        "card_3_detail": " ".join(card_3_points[2:]) if len(card_3_points) > 2 else cards.get("card_3_detail", ""),
+        "card_3_detail": " ".join(card_3_action[:2]) if card_3_action else cards.get("card_3_detail", ""),
+        "card_3_affects": card_3_affects,
+        "card_3_action": card_3_action,
         "category": category,
         # Pipeline metadata
         "_facts": facts,

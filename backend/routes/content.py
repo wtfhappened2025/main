@@ -81,6 +81,8 @@ async def get_explanation(topic_id: str):
                 "card_1_detail": ai_result.get("card_1_detail", ""),
                 "card_2_detail": ai_result.get("card_2_detail", ""),
                 "card_3_detail": ai_result.get("card_3_detail", ""),
+                "card_3_affects": ai_result.get("card_3_affects", []),
+                "card_3_action": ai_result.get("card_3_action", []),
                 "category": ai_result.get("category", topic.get("category", "world_news")),
                 "visual_type": None,
                 "created_at": datetime.now(timezone.utc).isoformat(),
@@ -116,6 +118,8 @@ async def explain_topic(req: ExplainRequest):
             "card_1_detail": ai_result.get("card_1_detail", ""),
             "card_2_detail": ai_result.get("card_2_detail", ""),
             "card_3_detail": ai_result.get("card_3_detail", ""),
+            "card_3_affects": ai_result.get("card_3_affects", []),
+            "card_3_action": ai_result.get("card_3_action", []),
             "category": category, "visual_type": None, "created_at": now,
         }
         await db.explanations.insert_one({**explanation})

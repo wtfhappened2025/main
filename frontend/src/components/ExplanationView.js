@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Share2, Bookmark, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Share2, Bookmark, ChevronDown, AlertTriangle, Zap } from 'lucide-react';
 import api from '@/api';
 
 const CARD_TABS = [
@@ -76,7 +76,12 @@ export default function ExplanationView({ topic, onBack, onShare }) {
   const cardContent = explanation ? {
     what: { main: explanation.card_1, detail: explanation.card_1_detail },
     why: { main: explanation.card_2, detail: explanation.card_2_detail },
-    matters: { main: explanation.card_3, detail: explanation.card_3_detail },
+    matters: {
+      affects: explanation.card_3_affects || [],
+      action: explanation.card_3_action || [],
+      main: explanation.card_3,
+      detail: explanation.card_3_detail,
+    },
   } : {};
 
   const colors = LABEL_COLORS[activeTab];
@@ -158,24 +163,69 @@ export default function ExplanationView({ topic, onBack, onShare }) {
               exit={{ opacity: 0, x: -30 }}
               transition={{ duration: 0.25 }}
               className={`${CARD_TABS.find(t => t.key === activeTab)?.className} 
-                rounded-3xl p-6 min-h-[340px] flex flex-col justify-between
+                rounded-3xl p-6 min-h-[340px] flex flex-col
                 border border-white/50 shadow-sm`}
             >
-              <div>
-                <span
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider mb-5"
-                  style={{ background: `${colors.bg}`, color: colors.text }}
-                >
-                  <span className="w-2 h-2 rounded-full" style={{ background: colors.dot }} />
-                  {CARD_LABELS[activeTab]}
-                </span>
-                <p className="text-2xl font-bold text-gray-900 leading-snug">
-                  {cardContent[activeTab]?.main}
-                </p>
-              </div>
-              <p className="text-sm text-gray-500 leading-relaxed mt-6">
-                {cardContent[activeTab]?.detail}
-              </p>
+              {activeTab === 'matters' && (cardContent.matters?.affects?.length > 0 || cardContent.matters?.action?.length > 0) ? (
+                <div data-testid="you-card-split" className="flex flex-col gap-5 h-full">
+                  {/* How it affects me */}
+                  <div data-testid="affects-section">
+                    <span
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider mb-3"
+                      style={{ background: '#FEE2E2', color: '#DC2626' }}
+                    >
+                      <AlertTriangle size={10} />
+                      HOW IT AFFECTS YOU
+                    </span>
+                    <ul className="space-y-2">
+                      {cardContent.matters.affects.map((point, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-800 leading-relaxed">
+                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
+                          {point}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {/* Divider */}
+                  <div className="border-t border-gray-200/60" />
+                  {/* What should I do */}
+                  <div data-testid="action-section">
+                    <span
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider mb-3"
+                      style={{ background: '#DBEAFE', color: '#2563EB' }}
+                    >
+                      <Zap size={10} />
+                      WHAT YOU SHOULD DO
+                    </span>
+                    <ul className="space-y-2">
+                      {cardContent.matters.action.map((point, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-800 leading-relaxed">
+                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                          {point}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <span
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider mb-5"
+                      style={{ background: `${colors.bg}`, color: colors.text }}
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ background: colors.dot }} />
+                      {CARD_LABELS[activeTab]}
+                    </span>
+                    <p className="text-2xl font-bold text-gray-900 leading-snug">
+                      {cardContent[activeTab]?.main}
+                    </p>
+                  </div>
+                  <p className="text-sm text-gray-500 leading-relaxed mt-6">
+                    {cardContent[activeTab]?.detail}
+                  </p>
+                </>
+              )}
             </motion.div>
           </AnimatePresence>
         ) : (

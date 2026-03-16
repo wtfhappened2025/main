@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="9" time="43.508" timestamp="2026-03-16T14:12:32.535137+00:00" hostname="agent-env-8c06d775-e1fc-4087-b940-30e2a52ddd6a"><testcase classname="tests.test_card3_split_iteration10.TestHealthAndSetup" name="test_health_endpoint" time="0.284" /><testcase classname="tests.test_card3_split_iteration10.TestHealthAndSetup" name="test_feed_returns_topics" time="0.135" /><testcase classname="tests.test_card3_split_iteration10.TestExistingExplanationFields" name="test_get_explanation_returns_expected_structure" time="0.301" /><testcase classname="tests.test_card3_split_iteration10.TestNewExplanationGeneration" name="test_explain_returns_card3_split_fields" time="10.874"><failure message="AssertionError: card_3_affects should have at least 1 item&#10;assert 0 &gt; 0&#10; +  where 0 = len([])">tests/test_card3_split_iteration10.py:128: in test_explain_returns_card3_split_fields
+    assert len(exp["card_3_affects"]) &gt; 0, "card_3_affects should have at least 1 item"
+E   AssertionError: card_3_affects should have at least 1 item
+E   assert 0 &gt; 0
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.test_card3_split_iteration10.TestNewExplanationGeneration" name="test_generated_explanation_persists_with_card3_split" time="17.372" /><testcase classname="tests.test_card3_split_iteration10.TestExplanationOnDemandGeneration" name="test_get_explanation_generates_card3_split_for_new_topic" time="13.979" /><testcase classname="tests.test_card3_split_iteration10.TestEdgeCases" name="test_explain_empty_input_rejected" time="0.179"><failure message="assert 429 == 400&#10; +  where 429 = &lt;Response [429]&gt;.status_code">tests/test_card3_split_iteration10.py:227: in test_explain_empty_input_rejected
+    assert response.status_code == 400
+E   assert 429 == 400
+E    +  where 429 = &lt;Response [429]&gt;.status_code</failure></testcase><testcase classname="tests.test_card3_split_iteration10.TestEdgeCases" name="test_explain_whitespace_input_rejected" time="0.146"><failure message="assert 429 == 400&#10; +  where 429 = &lt;Response [429]&gt;.status_code">tests/test_card3_split_iteration10.py:233: in test_explain_whitespace_input_rejected
+    assert response.status_code == 400
+E   assert 429 == 400
+E    +  where 429 = &lt;Response [429]&gt;.status_code</failure></testcase><testcase classname="tests.test_card3_split_iteration10.TestEdgeCases" name="test_get_nonexistent_explanation" time="0.139"><failure message="assert 429 == 404&#10; +  where 429 = &lt;Response [429]&gt;.status_code">tests/test_card3_split_iteration10.py:239: in test_get_nonexistent_explanation
+    assert response.status_code == 404
+E   assert 429 == 404
+E    +  where 429 = &lt;Response [429]&gt;.status_code</failure></testcase></testsuite></testsuites>
