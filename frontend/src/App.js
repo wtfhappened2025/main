@@ -3,6 +3,8 @@ import '@/App.css';
 import AuthScreen from '@/components/AuthScreen';
 import ForgotPassword from '@/components/ForgotPassword';
 import OnboardingFlow from '@/components/OnboardingFlow';
+import SplashScreen from '@/components/SplashScreen';
+import HomePage from '@/components/HomePage';
 import TrendingFeed from '@/components/TrendingFeed';
 import ExplanationView from '@/components/ExplanationView';
 import ExplainInput from '@/components/ExplainInput';
@@ -23,8 +25,9 @@ const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/arti
 function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [view, setView] = useState('auth'); // auth | forgot | terms | onboarding | main | settings | admin-login | admin
-  const [activeTab, setActiveTab] = useState('trending');
+  const [view, setView] = useState('splash'); // splash | auth | forgot | terms | onboarding | main | settings | admin-login | admin
+  const [activeTab, setActiveTab] = useState('home');
+  const [showFeed, setShowFeed] = useState(false); // sub-state: when true on 'home' tab, shows full feed
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [socialCard, setSocialCard] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
@@ -82,7 +85,7 @@ function App() {
     }
     setAuthChecked(true);
 
-    const handleExpiry = () => { setUser(null); setView('auth'); };
+    const handleExpiry = () => { setUser(null); setView('splash'); };
     window.addEventListener('auth_expired', handleExpiry);
     return () => window.removeEventListener('auth_expired', handleExpiry);
   }, []);
@@ -116,16 +119,17 @@ function App() {
     localStorage.removeItem('wtf_token');
     localStorage.removeItem('wtf_user');
     setUser(null);
-    setView('auth');
+    setView('splash');
     setShowProfile(false);
     setSelectedTopic(null);
-    setActiveTab('trending');
+    setActiveTab('home');
+    setShowFeed(false);
   }, []);
 
   const handleAdminLogout = useCallback(() => {
     localStorage.removeItem('wtf_admin_token');
     window.history.pushState({}, '', '/');
-    setView('auth');
+    setView('splash');
   }, []);
 
   const handleUserUpdate = useCallback((updatedUser) => {
@@ -144,7 +148,16 @@ function App() {
   }, []);
 
   const handleExplained = useCallback((topic) => { setSelectedTopic(topic); }, []);
-  const handleTabChange = useCallback((tab) => { setSelectedTopic(null); setActiveTab(tab); }, []);
+
+  const handleTabChange = useCallback((tab) => {
+    setSelectedTopic(null);
+    setShowFeed(false);
+    setActiveTab(tab);
+  }, []);
+
+  const handleBrowseAll = useCallback(() => {
+    setShowFeed(true);
+  }, []);
 
   // Loading
   if (!authChecked) {
@@ -160,14 +173,23 @@ function App() {
     return <div className="app-shell"><TermsPage onBack={() => setView('auth')} /></div>;
   }
 
-  // Admin login — only accessible via /admin route
+  // Admin login
   if (view === 'admin-login') {
-    return <div className="app-shell"><AdminLogin onBack={() => { window.history.pushState({}, '', '/'); setView('auth'); }} onAdminAuth={() => setView('admin')} /></div>;
+    return <div className="app-shell"><AdminLogin onBack={() => { window.history.pushState({}, '', '/'); setView('splash'); }} onAdminAuth={() => setView('admin')} /></div>;
   }
 
   // Admin panel
   if (view === 'admin') {
     return <AdminPanel onLogout={handleAdminLogout} />;
+  }
+
+  // Splash screen
+  if (view === 'splash' && !user) {
+    return (
+      <AnimatePresence mode="wait">
+        <SplashScreen onContinue={() => setView('auth')} />
+      </AnimatePresence>
+    );
   }
 
   // Forgot password
@@ -253,8 +275,17 @@ function App() {
             <ExplanationView topic={selectedTopic} onBack={handleBack} onShare={handleShare} />
           </motion.div>
         ) : (
-          <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-            {activeTab === 'trending' && <TrendingFeed onTopicClick={handleTopicClick} user={user} />}
+          <motion.div key={`${activeTab}-${showFeed}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+            {activeTab === 'home' && !showFeed && (
+              <HomePage
+                onBrowseAll={handleBrowseAll}
+                onTopicClick={handleTopicClick}
+                user={user}
+              />
+            )}
+            {activeTab === 'home' && showFeed && (
+              <TrendingFeed onTopicClick={handleTopicClick} user={user} onBack={() => setShowFeed(false)} />
+            )}
             {activeTab === 'explain' && <ExplainInput onExplained={handleExplained} />}
             {activeTab === 'saved' && <SavedTopics onTopicClick={handleTopicClick} />}
           </motion.div>

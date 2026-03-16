@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Flame, Search, Bookmark } from 'lucide-react';
 
 const TABS = [
-  { key: 'trending', label: 'TRENDING', Icon: Flame },
+  { key: 'home', label: 'HOME', Icon: Flame },
   { key: 'explain', label: 'EXPLAIN', Icon: Search },
   { key: 'saved', label: 'SAVED', Icon: Bookmark },
 ];

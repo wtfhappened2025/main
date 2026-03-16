@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-import { Eye, MessageCircle, TrendingUp, Zap, RefreshCw, Bookmark, Share2, ChevronRight } from 'lucide-react';
+import { Eye, MessageCircle, TrendingUp, Zap, RefreshCw, Bookmark, Share2, ChevronRight, ArrowLeft } from 'lucide-react';
 import api from '@/api';
 
 const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/0qv7i1f2_WTFH%20logo.png';
@@ -214,7 +214,7 @@ function MosaicCard({ topic, isHero, onClick, onDismiss, onSave, onReact, savedI
   );
 }
 
-export default function TrendingFeed({ onTopicClick, user }) {
+export default function TrendingFeed({ onTopicClick, user, onBack }) {
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(
@@ -334,6 +334,16 @@ export default function TrendingFeed({ onTopicClick, user }) {
       <div className="mb-5">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
+            {onBack && (
+              <button
+                data-testid="feed-back-btn"
+                onClick={onBack}
+                className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center
+                  hover:bg-gray-50 transition-colors mr-1"
+              >
+                <ArrowLeft size={16} className="text-gray-600" />
+              </button>
+            )}
             <img src={LOGO_URL} alt="WTFHappened" className="h-7 object-contain" />
           </div>
           <motion.div
