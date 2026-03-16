@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from database import db
 from utils.security import get_current_user
 from utils.helpers import time_ago, CATEGORY_COLORS, INTEREST_TO_CATEGORY
-from models import ExplainRequest
+from models import ExplainRequest, ReactionRequest
 from services.ai_engine import generate_explanation, generate_caption
 
 router = APIRouter(prefix="/api", tags=["content"])
@@ -195,3 +195,59 @@ async def render_card(topic_id: str, template_type: str = "standard"):
             "hashtags": caption_data.get("hashtags", []), "brand": "wtfhappened.app",
         }
     }
+
+
+
+VALID_REACTIONS = {"fire", "shocked", "mindblown", "angry"}
+
+
+@router.post("/react/{topic_id}")
+async def react_to_topic(topic_id: str, req: ReactionRequest, user=Depends(get_current_user)):
+    if req.emoji not in VALID_REACTIONS:
+        raise HTTPException(status_code=400, detail="Invalid reaction type")
+    topic = await db.topics.find_one({"id": topic_id})
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+
+    existing = await db.user_reactions.find_one(
+        {"topic_id": topic_id, "user_id": user["id"], "emoji": req.emoji}
+    )
+    if existing:
+        await db.user_reactions.delete_one({"_id": existing["_id"]})
+        await db.topics.update_one({"id": topic_id}, {"$inc": {f"reactions.{req.emoji}": -1}})
+        toggled = False
+    else:
+        await db.user_reactions.insert_one({
+            "topic_id": topic_id, "user_id": user["id"], "emoji": req.emoji,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        await db.topics.update_one({"id": topic_id}, {"$inc": {f"reactions.{req.emoji}": 1}})
+        toggled = True
+
+    updated = await db.topics.find_one({"id": topic_id}, {"_id": 0, "reactions": 1})
+    return {"toggled": toggled, "emoji": req.emoji, "reactions": updated.get("reactions", {})}
+
+
+@router.get("/reactions/mine")
+async def get_my_reactions(topic_ids: str, user=Depends(get_current_user)):
+    ids = [t.strip() for t in topic_ids.split(",") if t.strip()]
+    if not ids:
+        return {"reactions": {}}
+    docs = await db.user_reactions.find(
+        {"user_id": user["id"], "topic_id": {"$in": ids}}, {"_id": 0}
+    ).to_list(500)
+    result = {}
+    for d in docs:
+        result.setdefault(d["topic_id"], []).append(d["emoji"])
+    return {"reactions": result}
+
+
+@router.post("/dismiss/{topic_id}")
+async def dismiss_topic(topic_id: str, user=Depends(get_current_user)):
+    await db.dismissed_topics.update_one(
+        {"user_id": user["id"], "topic_id": topic_id},
+        {"$set": {"user_id": user["id"], "topic_id": topic_id,
+                  "dismissed_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True,
+    )
+    return {"dismissed": True}

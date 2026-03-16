@@ -58,6 +58,9 @@ const api = {
   getTrending: () => axios.get(`${API}/trending`).then(r => r.data),
   saveTopic: (topicId) => axiosAuth.post(`/save/${topicId}`).then(r => r.data),
   getSaved: () => axiosAuth.get('/saved').then(r => r.data),
+  reactToTopic: (topicId, emoji) => axiosAuth.post(`/react/${topicId}`, { emoji }).then(r => r.data),
+  getMyReactions: (topicIds) => axiosAuth.get('/reactions/mine', { params: { topic_ids: topicIds.join(',') } }).then(r => r.data),
+  dismissTopic: (topicId) => axiosAuth.post(`/dismiss/${topicId}`).then(r => r.data),
   getRenderCard: (topicId, templateType = 'standard') =>
     axios.get(`${API}/render-card/${topicId}`, { params: { template_type: templateType } }).then(r => r.data),
   refreshTrending: () => axios.post(`${API}/refresh-trending`).then(r => r.data),

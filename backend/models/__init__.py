@@ -76,3 +76,7 @@ class AdminPromptUpdate(BaseModel):
 
 class ExplainRequest(BaseModel):
     input: str
+
+
+class ReactionRequest(BaseModel):
+    emoji: str
