@@ -19,13 +19,19 @@ Build a consumer web app/PWA that explains trending topics using AI-generated 3-
 - **Payments**: Stripe via emergentintegrations library
 - **Data Sources**: CoinGecko, Wikipedia, Hacker News, Google Trends, X/Twitter, RSS Feeds (BBC, TMZ, Vogue, E! News)
 
-### Security & Best Practices (implemented 2026-03-15)
-- Security headers: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, HSTS
-- Rate limiting: 10/min on auth endpoints, 60/min default
+### Security & Best Practices (implemented 2026-03-15/16)
+- Security headers: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, HSTS, Cache-Control: no-store for API
+- Rate limiting: 10/min on auth endpoints, 5/min per user on AI endpoints, 60/min default
 - Request logging with X-Request-ID for traceability
 - Global exception handler with standardized error responses
 - CORS configured with specific origins (not wildcard)
-- JWT with cryptographically secure secret
+- JWT with persisted cryptographic secret (fail-fast if missing)
+- JWT refresh token flow with rotation (old tokens invalidated on use)
+- Security audit logging: every auth event logged to DB (login, register, password reset, failures)
+- API usage tracking: monitors AI/expensive endpoint calls with hourly/daily stats
+- Admin endpoints: /admin/audit-log, /admin/api-usage for security monitoring
+- No hardcoded secrets — ADMIN_PASSWORD, JWT_SECRET required in .env (fail-fast)
+- MongoDB connection pooling (maxPoolSize=20, minPoolSize=2)
 - .env.example documenting all required variables
 - README.md with full API documentation
 
