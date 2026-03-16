@@ -37,8 +37,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-        if request.url.scheme == "https":
-            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Cache-Control"] = "no-store" if "/api/" in str(request.url) else "public, max-age=3600"
         return response
 
 
@@ -52,39 +52,65 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         duration_ms = (datetime.now(timezone.utc) - start).total_seconds() * 1000
-        logger.info(json.dumps({
+        log_data = {
             "request_id": request_id,
             "method": request.method,
             "path": request.url.path,
             "status": response.status_code,
             "duration_ms": round(duration_ms, 1),
-        }))
+            "ip": request.client.host if request.client else "unknown",
+        }
+        if response.status_code >= 400:
+            logger.warning(json.dumps(log_data))
+        else:
+            logger.info(json.dumps(log_data))
         response.headers["X-Request-ID"] = request_id
         return response
 
 
-# --- Rate Limiting Middleware ---
+# --- Rate Limiting Middleware (IP + per-user on expensive endpoints) ---
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Simple in-memory rate limiter. For production, use Redis-backed."""
+    """In-memory rate limiter with per-user AI endpoint limits."""
 
-    def __init__(self, app, default_rpm: int = 60, auth_rpm: int = 10):
+    def __init__(self, app, default_rpm: int = 60, auth_rpm: int = 10, ai_rpm: int = 5):
         super().__init__(app)
         self.default_rpm = default_rpm
         self.auth_rpm = auth_rpm
-        self._requests: dict = {}  # {ip: [(timestamp, path), ...]}
+        self.ai_rpm = ai_rpm
+        self._requests: dict = {}
 
     async def dispatch(self, request: Request, call_next):
         client_ip = request.client.host if request.client else "unknown"
         path = request.url.path
         now = datetime.now(timezone.utc)
 
-        # Choose limit based on path
+        # Determine rate limit category
         is_auth = "/auth/login" in path or "/auth/register" in path or "/admin/login" in path
-        rpm_limit = self.auth_rpm if is_auth else self.default_rpm
+        is_ai = "/explain" in path or "/explanation/" in path
 
-        # Clean old entries (older than 60s)
-        key = f"{client_ip}:{path}" if is_auth else client_ip
+        if is_auth:
+            rpm_limit = self.auth_rpm
+            key = f"auth:{client_ip}:{path}"
+        elif is_ai:
+            # Per-user for AI: extract user ID from auth header if present
+            auth_header = request.headers.get("authorization", "")
+            user_key = "anon"
+            if auth_header.startswith("Bearer "):
+                try:
+                    import jwt
+                    from config import settings
+                    payload = jwt.decode(auth_header.split(" ")[1], settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+                    user_key = payload.get("sub", "anon")
+                except Exception:
+                    pass
+            rpm_limit = self.ai_rpm
+            key = f"ai:{user_key}"
+        else:
+            rpm_limit = self.default_rpm
+            key = f"general:{client_ip}"
+
+        # Clean old entries
         if key not in self._requests:
             self._requests[key] = []
         self._requests[key] = [
@@ -93,14 +119,21 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         ]
 
         if len(self._requests[key]) >= rpm_limit:
+            logger.warning(json.dumps({
+                "event": "rate_limit_exceeded",
+                "key": key,
+                "path": path,
+                "ip": client_ip,
+                "limit": rpm_limit,
+            }))
             return JSONResponse(
                 status_code=429,
-                content={"success": False, "error": {"message": "Too many requests", "code": 429}},
+                content={"success": False, "error": {"message": "Too many requests. Please slow down.", "code": 429}},
             )
 
         self._requests[key].append(now)
 
-        # Periodic cleanup (every 100 requests)
+        # Periodic cleanup
         if sum(len(v) for v in self._requests.values()) > 10000:
             self._requests.clear()
 

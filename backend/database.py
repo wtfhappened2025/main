@@ -10,6 +10,8 @@ client = AsyncIOMotorClient(
     connectTimeoutMS=5000,
     retryWrites=True,
     retryReads=True,
+    maxPoolSize=20,
+    minPoolSize=2,
 )
 db = client[settings.DB_NAME]
 
@@ -41,6 +43,14 @@ async def create_indexes():
         await db.ai_prompts.create_index("prompt_key")
         await db.published_cards.create_index("topic_id")
         await db.system_meta.create_index("key", unique=True)
+        # Security: audit log index
+        await db.audit_log.create_index("event")
+        await db.audit_log.create_index("timestamp")
+        await db.audit_log.create_index("user_id")
+        # API usage tracking
+        await db.api_usage.create_index("endpoint")
+        await db.api_usage.create_index("user_id")
+        await db.api_usage.create_index("timestamp")
         logger.info("Database indexes created")
     except Exception as e:
         logger.error(f"Index creation failed: {e}")

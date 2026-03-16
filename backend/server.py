@@ -9,6 +9,7 @@ from starlette.middleware.cors import CORSMiddleware
 from config import settings
 from database import create_indexes, client
 from middleware import SecurityHeadersMiddleware, RequestLoggingMiddleware, RateLimitMiddleware
+from middleware.api_usage import APIUsageMiddleware
 from services.scheduler import seed_initial_data, start_scheduler, stop_scheduler
 
 # Routes
@@ -38,7 +39,8 @@ app.add_middleware(
 )
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestLoggingMiddleware)
-app.add_middleware(RateLimitMiddleware, default_rpm=60, auth_rpm=10)
+app.add_middleware(APIUsageMiddleware)
+app.add_middleware(RateLimitMiddleware, default_rpm=60, auth_rpm=10, ai_rpm=settings.AI_RPM_PER_USER)
 
 # --- Global Exception Handler ---
 from fastapi import Request

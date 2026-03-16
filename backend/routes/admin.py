@@ -128,6 +128,37 @@ async def admin_published_cards(admin=Depends(get_admin_user)):
     return {"published": cards}
 
 
+@router.get("/admin/audit-log")
+async def admin_audit_log(limit: int = 100, event: str = None, admin=Depends(get_admin_user)):
+    """View security audit log."""
+    query = {}
+    if event:
+        query["event"] = event
+    entries = await db.audit_log.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
+    return {"audit_log": entries, "count": len(entries)}
+
+
+@router.get("/admin/api-usage")
+async def admin_api_usage(limit: int = 100, usage_type: str = None, admin=Depends(get_admin_user)):
+    """View API usage tracking — monitors AI/expensive endpoint calls."""
+    query = {}
+    if usage_type:
+        query["type"] = usage_type
+    entries = await db.api_usage.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
+    # Aggregate stats
+    from datetime import timedelta
+    now = datetime.now(timezone.utc)
+    last_hour = (now - timedelta(hours=1)).isoformat()
+    last_day = (now - timedelta(days=1)).isoformat()
+    hourly_count = await db.api_usage.count_documents({"timestamp": {"$gte": last_hour}})
+    daily_count = await db.api_usage.count_documents({"timestamp": {"$gte": last_day}})
+    ai_daily = await db.api_usage.count_documents({"timestamp": {"$gte": last_day}, "type": {"$in": ["ai_explanation", "ai_explain"]}})
+    return {
+        "usage": entries,
+        "stats": {"hourly_total": hourly_count, "daily_total": daily_count, "daily_ai_calls": ai_daily},
+    }
+
+
 @router.post("/admin/publish-now")
 async def admin_publish_now(background_tasks: BackgroundTasks, admin=Depends(get_admin_user)):
     from services.publisher import auto_publish_job
