@@ -131,7 +131,7 @@ async def forgot_password(req: ForgotPasswordRequest, request: Request):
     user = await db.users.find_one({"$or": [{"email": identifier}, {"mobile": identifier}]})
     if not user:
         await audit_log("password_reset_unknown", {"identifier": identifier}, ip=request.client.host)
-        return {"message": "If an account exists, a reset link has been sent."}
+        return {"message": "If an account exists, a reset link has been sent.", "email_sent": False}
     reset_token = secrets.token_urlsafe(32)
     await db.password_resets.insert_one({
         "user_id": user["id"],
