@@ -213,11 +213,11 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
                 <h1 className="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-5">
                   Understand what's<br />happening in the world<br />in 30 seconds
                 </h1>
-                <p className="text-lg text-gray-400 max-w-[340px] mx-auto mb-3 leading-relaxed">
+                <p className="text-lg text-gray-600 max-w-[340px] mx-auto mb-3 leading-relaxed">
                   We explain trending topics with 3 simple cards.
                   No noise, just clarity.
                 </p>
-                <p className="text-lg text-gray-400">
+                <p className="text-lg text-gray-600">
                   Let's personalize your feed.
                 </p>
 
