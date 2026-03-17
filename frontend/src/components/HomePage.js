@@ -1,23 +1,134 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Flame, Zap, TrendingUp, ArrowRight, ChevronRight } from 'lucide-react';
+import { Flame, Zap, TrendingUp, ArrowRight } from 'lucide-react';
 import api from '@/api';
 
 const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/0qv7i1f2_WTFH%20logo.png';
 
-const CAT_STYLES = {
-  finance:      { emoji: '\uD83D\uDCC8', label: 'MARKETS', bg: '#FEF2F2', iconBg: '#FECACA', color: '#991B1B' },
-  technology:   { emoji: '\u26A1', label: 'TECH', bg: '#FEF9C3', iconBg: '#FEF08A', color: '#854D0E' },
-  ai:           { emoji: '\uD83E\uDD16', label: 'AI', bg: '#ECFDF5', iconBg: '#A7F3D0', color: '#065F46' },
-  economy:      { emoji: '\uD83D\uDCB0', label: 'ECONOMY', bg: '#FFF7ED', iconBg: '#FED7AA', color: '#9A3412' },
-  crypto:       { emoji: '\uD83E\uDE99', label: 'CRYPTO', bg: '#FFF7ED', iconBg: '#FDBA74', color: '#C2410C' },
-  science:      { emoji: '\uD83D\uDD2C', label: 'SCIENCE', bg: '#EDE9FE', iconBg: '#C4B5FD', color: '#5B21B6' },
-  world_news:   { emoji: '\uD83C\uDF0D', label: 'WORLD', bg: '#FEF2F2', iconBg: '#FECACA', color: '#991B1B' },
-  internet_culture: { emoji: '\uD83C\uDF10', label: 'CULTURE', bg: '#FFF1F2', iconBg: '#FECDD3', color: '#9F1239' },
-  politics:     { emoji: '\uD83C\uDFDB\uFE0F', label: 'POLITICS', bg: '#FEF2F2', iconBg: '#FECACA', color: '#DC2626' },
-  entertainment:{ emoji: '\uD83C\uDFAC', label: 'CELEB', bg: '#FDF2F8', iconBg: '#FBCFE8', color: '#9D174D' },
-  lifestyle:    { emoji: '\u2728', label: 'STYLE', bg: '#F5F3FF', iconBg: '#DDD6FE', color: '#6D28D9' },
+const CAT_LABELS = {
+  finance: 'MARKETS', technology: 'TECH', ai: 'AI', economy: 'ECONOMY',
+  crypto: 'CRYPTO', science: 'SCIENCE', world_news: 'WORLD',
+  internet_culture: 'CULTURE', politics: 'POLITICS',
+  entertainment: 'CELEB', lifestyle: 'STYLE',
 };
+
+// Category-specific stock images from Unsplash
+const CAT_IMAGES = {
+  finance: [
+    'https://images.unsplash.com/photo-1768055105681-7d2096c5165f?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1767424196045-030bbde122a4?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1768055104929-cf2317674a80?w=800&h=600&fit=crop',
+  ],
+  technology: [
+    'https://images.unsplash.com/photo-1771189957040-3a4f9b78812c?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1706777280252-5de52771cf13?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1573757056004-065ad36e2cf4?w=800&h=600&fit=crop',
+  ],
+  ai: [
+    'https://images.unsplash.com/photo-1760629863094-5b1e8d1aae74?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1769839271832-cfd7a1f6854f?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1771515220841-2dfbfe80e9e2?w=800&h=600&fit=crop',
+  ],
+  economy: [
+    'https://images.unsplash.com/photo-1591033594798-33227a05780d?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1763047360803-4f0432c73b11?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1646776930319-b16b17781725?w=800&h=600&fit=crop',
+  ],
+  crypto: [
+    'https://images.unsplash.com/photo-1639133893916-a711d8af8c0a?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1652337037919-62e284ff2839?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1639754391010-d24457e21118?w=800&h=600&fit=crop',
+  ],
+  science: [
+    'https://images.unsplash.com/photo-1707944746058-4da338d0f827?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1707944745853-b86631676829?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1707944745900-ae9f750f2c69?w=800&h=600&fit=crop',
+  ],
+  world_news: [
+    'https://images.unsplash.com/photo-1618847207931-c05e836bbdb5?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1588623731810-171b80f3c55e?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1613662265610-051b02ce6630?w=800&h=600&fit=crop',
+  ],
+  politics: [
+    'https://images.unsplash.com/photo-1627990316935-9c473904206e?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1760488352907-8af7f514cce3?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1666798044958-9df7c6cc279a?w=800&h=600&fit=crop',
+  ],
+  entertainment: [
+    'https://images.unsplash.com/photo-1561835661-ebd6f6283571?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1614115866447-c9a299154650?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1760030428042-f2bd83bc03ba?w=800&h=600&fit=crop',
+  ],
+  lifestyle: [
+    'https://images.unsplash.com/photo-1762331966914-c72c3f6624d1?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1644908325834-3dfd46b1c629?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1771514021692-b4ebc7ec28ee?w=800&h=600&fit=crop',
+  ],
+  internet_culture: [
+    'https://images.unsplash.com/photo-1762340275305-4a716fdd3b08?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1762340275963-04400d52c393?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1762330469300-2732c258c686?w=800&h=600&fit=crop',
+  ],
+};
+
+function getTopicImage(topic, index) {
+  const pool = CAT_IMAGES[topic.category] || CAT_IMAGES.world_news;
+  // Use a simple hash of topic id to pick a consistent image
+  let hash = 0;
+  for (let i = 0; i < (topic.id || '').length; i++) {
+    hash = ((hash << 5) - hash + topic.id.charCodeAt(i)) | 0;
+  }
+  return pool[Math.abs(hash + index) % pool.length];
+}
+
+function BentoCard({ topic, isHero, onClick, index }) {
+  const label = CAT_LABELS[topic.category] || 'NEWS';
+  const imgUrl = getTopicImage(topic, index);
+
+  return (
+    <motion.button
+      data-testid={`home-topic-${topic.id}`}
+      onClick={() => onClick(topic)}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.35 + index * 0.12 }}
+      className="relative w-full h-full rounded-2xl overflow-hidden group text-left"
+      style={{ minHeight: isHero ? 280 : 134 }}
+    >
+      {/* Background image */}
+      <img
+        src={imgUrl}
+        alt={topic.title}
+        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        loading="lazy"
+      />
+      {/* Dark gradient overlay */}
+      <div className="absolute inset-0" style={{
+        background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.05) 100%)',
+      }} />
+
+      {/* Content */}
+      <div className="absolute inset-0 flex flex-col justify-end p-4">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-[10px] font-extrabold tracking-widest text-white/70 uppercase">
+            {label}
+          </span>
+          <span className="text-[10px] font-bold text-orange-400">
+            {'\uD83D\uDD25'} {topic.trend_score}
+          </span>
+        </div>
+        <h3 className={`font-bold text-white leading-snug ${isHero ? 'text-lg' : 'text-sm'}`}>
+          {topic.title}
+        </h3>
+        {isHero && (
+          <p className="text-xs text-white/60 mt-1 line-clamp-2 leading-relaxed">
+            Tap to read the full breakdown in 3 simple cards
+          </p>
+        )}
+      </div>
+    </motion.button>
+  );
+}
 
 export default function HomePage({ onBrowseAll, onTopicClick, user }) {
   const [topics, setTopics] = useState([]);
@@ -37,11 +148,8 @@ export default function HomePage({ onBrowseAll, onTopicClick, user }) {
           confused: Math.floor(8000 + allTopics.length * 200 + Math.random() * 4000),
           read: Math.floor(5000 + allTopics.length * 150 + Math.random() * 3000),
         });
-      } catch {
-        /* noop */
-      } finally {
-        setLoading(false);
-      }
+      } catch { /* noop */ }
+      finally { setLoading(false); }
     })();
   }, []);
 
@@ -78,10 +186,7 @@ export default function HomePage({ onBrowseAll, onTopicClick, user }) {
         className="grid grid-cols-3 gap-3 mb-8"
       >
         {STAT_CARDS.map((stat, i) => (
-          <div
-            key={i}
-            className="bg-white rounded-2xl border border-gray-100 p-4 text-center"
-          >
+          <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
             <stat.icon size={20} className="mx-auto mb-2" style={{ color: stat.color }} />
             <div className="text-2xl font-black text-gray-900">{stat.value}</div>
             <div className="text-[9px] font-bold tracking-wider text-gray-400 uppercase mt-1">
@@ -91,79 +196,57 @@ export default function HomePage({ onBrowseAll, onTopicClick, user }) {
         ))}
       </motion.div>
 
-      {/* Top 3 section */}
-      <motion.div
+      {/* Headlines section header */}
+      <motion.h2
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
+        className="text-sm font-bold text-gray-500 tracking-wider uppercase mb-4 flex items-center gap-1.5"
       >
-        <h2 className="text-sm font-bold text-gray-500 tracking-wider uppercase mb-4 flex items-center gap-1.5">
-          {'\uD83D\uDD25'} Top 3 Right Now
-        </h2>
+        {'\uD83D\uDCF0'} Today's Headlines
+      </motion.h2>
 
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 rounded-2xl bg-gray-100 animate-pulse" />
-            ))}
+      {/* Bento image grid */}
+      {loading ? (
+        <div className="grid grid-cols-5 gap-3" style={{ height: 280 }}>
+          <div className="col-span-3 rounded-2xl bg-gray-100 animate-pulse" />
+          <div className="col-span-2 flex flex-col gap-3">
+            <div className="flex-1 rounded-2xl bg-gray-100 animate-pulse" />
+            <div className="flex-1 rounded-2xl bg-gray-100 animate-pulse" />
           </div>
-        ) : (
-          <div className="space-y-3">
-            {topics.map((topic, i) => {
-              const cat = CAT_STYLES[topic.category] || CAT_STYLES.world_news;
-              return (
-                <motion.button
-                  key={topic.id}
-                  data-testid={`home-topic-${topic.id}`}
-                  onClick={() => onTopicClick(topic)}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 + i * 0.1 }}
-                  className="w-full flex items-center gap-3 bg-white rounded-2xl border border-gray-100 p-4
-                    hover:shadow-md hover:border-gray-200 transition-all text-left group"
-                >
-                  {/* Category icon */}
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0"
-                    style={{ background: cat.iconBg }}
-                  >
-                    {cat.emoji}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-[10px] font-extrabold tracking-widest uppercase text-gray-400">
-                        {cat.label}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                        <span className="text-[10px] font-bold text-orange-500">
-                          {'\uD83D\uDD25'} {topic.trend_score}
-                        </span>
-                      </div>
-                    </div>
-                    <h3 className="text-sm font-bold text-gray-900 leading-snug line-clamp-1">
-                      {topic.title}
-                    </h3>
-                    {topic.has_explanation && (
-                      <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
-                        Tap to read the explanation in 3 cards
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Arrow */}
-                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0
-                    group-hover:bg-purple-50 transition-colors">
-                    <ChevronRight size={16} className="text-gray-400 group-hover:text-purple-500 transition-colors" />
-                  </div>
-                </motion.button>
-              );
-            })}
+        </div>
+      ) : topics.length > 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.35 }}
+          className="grid grid-cols-5 gap-3"
+          style={{ height: 280 }}
+        >
+          {/* Hero — left column */}
+          <div className="col-span-3">
+            <BentoCard topic={topics[0]} isHero onClick={onTopicClick} index={0} />
           </div>
-        )}
-      </motion.div>
+
+          {/* Right column — 2 stacked */}
+          <div className="col-span-2 flex flex-col gap-3">
+            {topics[1] && (
+              <div className="flex-1">
+                <BentoCard topic={topics[1]} onClick={onTopicClick} index={1} />
+              </div>
+            )}
+            {topics[2] && (
+              <div className="flex-1">
+                <BentoCard topic={topics[2]} onClick={onTopicClick} index={2} />
+              </div>
+            )}
+          </div>
+        </motion.div>
+      ) : (
+        <div className="rounded-2xl bg-gray-100 h-[200px] flex items-center justify-center">
+          <p className="text-gray-400 text-sm">No topics yet</p>
+        </div>
+      )}
 
       {/* Browse All CTA */}
       <motion.button

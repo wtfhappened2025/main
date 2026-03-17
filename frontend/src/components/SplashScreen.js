@@ -78,7 +78,7 @@ export default function SplashScreen({ onContinue }) {
         transition={{ delay: 0.2, duration: 0.6 }}
         className="mb-6 z-10"
       >
-        <img src={LOGO_URL} alt="WTFHappened" className="h-10 object-contain" />
+        <img src={LOGO_URL} alt="WTFHappened" className="h-20 sm:h-24 object-contain" />
       </motion.div>
 
       {/* Main card */}
