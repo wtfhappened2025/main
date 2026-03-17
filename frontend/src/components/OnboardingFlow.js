@@ -269,23 +269,23 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
 
             {/* Step 2: Curiosity Type */}
             {step === 2 && (
-              <div>
+              <div className="flex flex-col min-h-[75vh]">
                 <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2">What are you curious about?</h2>
                 <p className="text-base text-gray-500 mb-6">This helps us pick better explanations for you.</p>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-3 flex-1 content-center">
                   {CURIOSITY_TYPES.map(item => (
                     <button
                       key={item}
                       data-testid={`curiosity-${item.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '')}`}
                       onClick={() => toggleItem(curiosityTypes, setCuriosityTypes, item)}
-                      className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold
+                      className={`text-left px-5 py-5 rounded-2xl text-base font-semibold
                         transition-all duration-150 flex items-center justify-between
                         ${curiosityTypes.includes(item)
                           ? 'bg-gray-900 text-white'
                           : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300'}`}
                     >
-                      <span className="line-clamp-1">{item}</span>
-                      {curiosityTypes.includes(item) && <Check size={16} className="shrink-0 ml-1" />}
+                      <span>{item}</span>
+                      {curiosityTypes.includes(item) && <Check size={18} className="shrink-0 ml-2" />}
                     </button>
                   ))}
                 </div>
