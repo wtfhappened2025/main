@@ -228,6 +228,7 @@ export default function TrendingFeed({ onTopicClick, user, onBack }) {
   const [dismissed, setDismissed] = useState(new Set());
   const [savedIds, setSavedIds] = useState(new Set());
   const [userReactions, setUserReactions] = useState({});
+  const [expandedCats, setExpandedCats] = useState(new Set());
 
   const loadFeed = async (category) => {
     setLoading(true);
@@ -286,6 +287,7 @@ export default function TrendingFeed({ onTopicClick, user, onBack }) {
   const handleRefresh = async () => {
     setRefreshing(true);
     setDismissed(new Set());
+    setExpandedCats(new Set());
     await loadFeed(activeCategory);
     setRefreshing(false);
   };
@@ -445,6 +447,72 @@ export default function TrendingFeed({ onTopicClick, user, onBack }) {
         ) : visibleTopics.length === 0 ? (
           <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
             <p className="text-gray-400 text-sm">No topics found for this category</p>
+          </motion.div>
+        ) : activeCategory === 'for-you' ? (
+          <motion.div
+            key="for-you-grouped"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+            data-testid="mosaic-grid"
+          >
+            {(() => {
+              const grouped = {};
+              visibleTopics.forEach(t => {
+                const cat = t.category || 'world_news';
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push(t);
+              });
+              const catMeta = (key) => CATEGORIES.find(c => c.key === key) || { label: key.toUpperCase(), emoji: '\uD83D\uDCF0', color: '#6B7280' };
+              return Object.entries(grouped).map(([cat, items]) => {
+                const meta = catMeta(cat);
+                const show = expandedCats.has(cat) ? items : items.slice(0, 3);
+                const hasMore = items.length > 3 && !expandedCats.has(cat);
+                return (
+                  <div key={cat} className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-base">{meta.emoji}</span>
+                      <span className="text-xs font-extrabold tracking-widest uppercase" style={{ color: meta.color }}>{meta.label}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">{items.length} topics</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {show.map((topic, i) => (
+                        <motion.div
+                          key={topic.id}
+                          layout
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.03 }}
+                          className={i === 0 && show.length > 1 ? 'col-span-2' : ''}
+                        >
+                          <MosaicCard
+                            topic={topic}
+                            isHero={i === 0 && show.length > 1}
+                            onClick={onTopicClick}
+                            onDismiss={handleDismiss}
+                            onSave={handleSave}
+                            onReact={handleReact}
+                            savedIds={savedIds}
+                            userReactions={userReactions}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                    {hasMore && (
+                      <button
+                        data-testid={`more-${cat}`}
+                        onClick={() => setExpandedCats(prev => new Set([...prev, cat]))}
+                        className="mt-2 text-sm font-semibold hover:underline transition-colors"
+                        style={{ color: meta.color }}
+                      >
+                        ...{items.length - 3} more
+                      </button>
+                    )}
+                  </div>
+                );
+              });
+            })()}
           </motion.div>
         ) : (
           <motion.div
