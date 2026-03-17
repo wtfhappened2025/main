@@ -201,25 +201,45 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
           >
             {/* Step 0: Welcome */}
             {step === 0 && (
-              <div className="text-center pt-16">
+              <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
                 <motion.img
                   src={LOGO_URL}
                   alt="WTFHappened"
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-                  className="h-20 mx-auto mb-6 object-contain"
+                  className="h-24 sm:h-28 mx-auto mb-8 object-contain"
                 />
-                <h1 className="text-2xl font-extrabold text-gray-900 leading-snug mb-3">
+                <h1 className="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-5">
                   Understand what's<br />happening in the world<br />in 30 seconds
                 </h1>
-                <p className="text-sm text-gray-400 max-w-[280px] mx-auto mb-2">
+                <p className="text-lg text-gray-400 max-w-[340px] mx-auto mb-3 leading-relaxed">
                   We explain trending topics with 3 simple cards.
                   No noise, just clarity.
                 </p>
-                <p className="text-sm text-gray-400">
+                <p className="text-lg text-gray-400">
                   Let's personalize your feed.
                 </p>
+
+                {/* Visual feature pills */}
+                <div className="flex flex-wrap justify-center gap-3 mt-8 max-w-md">
+                  {[
+                    { emoji: '\u26A1', text: '3-card explainers' },
+                    { emoji: '\uD83D\uDD25', text: 'Trending topics' },
+                    { emoji: '\uD83E\uDD16', text: 'AI-powered' },
+                  ].map((item, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 + i * 0.15 }}
+                      className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
+                    >
+                      <span className="text-xl">{item.emoji}</span>
+                      <span className="text-sm font-semibold text-gray-700">{item.text}</span>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
             )}
 
