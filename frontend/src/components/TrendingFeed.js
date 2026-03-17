@@ -13,7 +13,10 @@ const CATEGORIES = [
   { key: 'economy', label: 'ECONOMY', emoji: '\uD83D\uDCB0', color: '#D97706', bg: '#FFFBEB', activeBg: '#D97706' },
   { key: 'crypto', label: 'CRYPTO', emoji: '\uD83E\uDE99', color: '#EA580C', bg: '#FFF7ED', activeBg: '#EA580C' },
   { key: 'ai', label: 'AI', emoji: '\uD83E\uDD16', color: '#7C3AED', bg: '#F5F3FF', activeBg: '#7C3AED' },
-  { key: 'science', label: 'SCIENCE', emoji: '\uD83D\uDD2C', color: '#7C3AED', bg: '#EDE9FE', activeBg: '#7C3AED' },
+  { key: 'science', label: 'SCIENCE', emoji: '\uD83D\uDD2C', color: '#6D28D9', bg: '#EDE9FE', activeBg: '#6D28D9' },
+  { key: 'world_news', label: 'WORLD', emoji: '\uD83C\uDF0E', color: '#DC2626', bg: '#FEF2F2', activeBg: '#DC2626' },
+  { key: 'politics', label: 'POLITICS', emoji: '\uD83C\uDFDB\uFE0F', color: '#B91C1C', bg: '#FEF2F2', activeBg: '#B91C1C' },
+  { key: 'internet_culture', label: 'CULTURE', emoji: '\uD83C\uDF10', color: '#F43F5E', bg: '#FFF1F2', activeBg: '#F43F5E' },
   { key: 'entertainment', label: 'CELEB', emoji: '\uD83C\uDFAC', color: '#DB2777', bg: '#FDF2F8', activeBg: '#DB2777' },
   { key: 'lifestyle', label: 'STYLE', emoji: '\u2728', color: '#9333EA', bg: '#FAF5FF', activeBg: '#9333EA' },
 ];
@@ -388,7 +391,7 @@ export default function TrendingFeed({ onTopicClick, user, onBack }) {
       </div>
 
       {/* Category filter pills */}
-      <div className="flex gap-2 mb-5 overflow-x-auto pb-1.5 scrollbar-hide -mx-1 px-1">
+      <div className="flex flex-wrap gap-2 mb-5">
         {CATEGORIES.map(cat => {
           const isActive = activeCategory === cat.key;
           const count = cat.key === 'for-you' ? (topics.length || '') :
@@ -399,7 +402,7 @@ export default function TrendingFeed({ onTopicClick, user, onBack }) {
               data-testid={`category-${cat.key}`}
               onClick={() => setActiveCategory(cat.key)}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-colors"
               style={isActive ? {
                 background: cat.activeBg,
                 color: '#fff',
