@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Flame, Zap, TrendingUp, ArrowRight } from 'lucide-react';
 import api from '@/api';
 
-const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/0qv7i1f2_WTFH%20logo.png';
+const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/i5z1wfjq_WTFH%20logo.png';
 
 const CAT_LABELS = {
   finance: 'MARKETS', technology: 'TECH', ai: 'AI', economy: 'ECONOMY',

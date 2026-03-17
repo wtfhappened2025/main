@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { Eye, MessageCircle, TrendingUp, Zap, RefreshCw, Bookmark, Share2, ChevronRight, ArrowLeft } from 'lucide-react';
 import api from '@/api';
 
-const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/0qv7i1f2_WTFH%20logo.png';
+const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/i5z1wfjq_WTFH%20logo.png';
 
 const CATEGORIES = [
   { key: 'for-you', label: 'YOUR NEWS', emoji: '\u2728', color: '#8B5CF6', bg: '#7C3AED', activeBg: 'linear-gradient(135deg, #8B5CF6, #6D28D9)' },

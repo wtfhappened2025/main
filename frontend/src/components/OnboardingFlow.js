@@ -68,7 +68,7 @@ const COUNTRIES = [
   'Kenya', 'Other',
 ];
 
-const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/0qv7i1f2_WTFH%20logo.png';
+const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/i5z1wfjq_WTFH%20logo.png';
 
 export default function OnboardingFlow({ user, onComplete, onLogout }) {
   const [step, setStep] = useState(0);

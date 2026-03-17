@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/0qv7i1f2_WTFH%20logo.png';
+const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/i5z1wfjq_WTFH%20logo.png';
 
 const FLOATING_EMOJIS = [
   { emoji: '\uD83D\uDD25', x: '10%', y: '5%', size: 32, delay: 0 },
@@ -78,7 +78,7 @@ export default function SplashScreen({ onContinue }) {
         transition={{ delay: 0.2, duration: 0.6 }}
         className="mb-6 z-10"
       >
-        <img src={LOGO_URL} alt="WTFHappened" className="h-20 sm:h-24 object-contain" />
+        <img src={LOGO_URL} alt="WTFHappened" className="h-28 sm:h-36 object-contain" />
       </motion.div>
 
       {/* Main card */}

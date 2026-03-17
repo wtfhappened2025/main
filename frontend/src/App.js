@@ -20,7 +20,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Settings, User } from 'lucide-react';
 import api from '@/api';
 
-const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/0qv7i1f2_WTFH%20logo.png';
+const LOGO_URL = 'https://customer-assets.emergentagent.com/job_web-pulse-4/artifacts/i5z1wfjq_WTFH%20logo.png';
 
 function App() {
   const [user, setUser] = useState(null);
