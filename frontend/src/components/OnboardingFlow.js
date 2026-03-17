@@ -46,8 +46,9 @@ const DEPTH_OPTIONS = [
 ];
 
 const PROFESSIONAL_OPTIONS = [
-  'Student', 'Tech professional', 'Investor / trader',
-  'Founder / entrepreneur', 'General curious person',
+  'Student', 'Tech professional', 'Business professional',
+  'Entrepreneur / founder', 'Investor / trader', 'Job seeker',
+  'Homemaker', 'Caregiver', 'Lifelong learner', 'General curious person',
 ];
 
 const TOPIC_GROUPS = [
@@ -76,7 +77,7 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
   const [depth, setDepth] = useState('simple');
   const [country, setCountry] = useState('');
   const [region, setRegion] = useState('');
-  const [professional, setProfessional] = useState('');
+  const [professional, setProfessional] = useState([]);
   const [followedTopics, setFollowedTopics] = useState([]);
   const [topicSearch, setTopicSearch] = useState('');
   const [saving, setSaving] = useState(false);
@@ -105,7 +106,7 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
         explanation_depth: depth,
         country,
         region,
-        professional_context: professional,
+        professional_context: professional.join(', '),
         followed_topics: followedTopics,
       });
       const updatedUser = { ...user, onboarding_complete: true, preferences: {
@@ -363,27 +364,27 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
 
             {/* Step 5: Professional Context */}
             {step === 5 && (
-              <div className="flex flex-col min-h-[70vh] justify-center">
+              <div className="flex flex-col min-h-[75vh]">
                 <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2">What describes you best?</h2>
-                <p className="text-base text-gray-500 mb-1">This is optional but improves relevance.</p>
-                <p className="text-sm text-gray-400 mb-8">
+                <p className="text-base text-gray-500 mb-1">Select all that apply. This is optional.</p>
+                <p className="text-sm text-gray-400 mb-6">
                   <Briefcase size={14} className="inline mr-1" />
                   You can skip this step
                 </p>
-                <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3 flex-1 content-center">
                   {PROFESSIONAL_OPTIONS.map(opt => (
                     <button
                       key={opt}
                       data-testid={`professional-${opt.toLowerCase().replace(/[\s\/]/g, '-')}`}
-                      onClick={() => setProfessional(professional === opt ? '' : opt)}
-                      className={`w-full text-left px-5 py-4.5 rounded-2xl text-base font-semibold
+                      onClick={() => toggleItem(professional, setProfessional, opt)}
+                      className={`text-left px-5 py-5 rounded-2xl text-base font-semibold
                         transition-all duration-150 flex items-center justify-between
-                        ${professional === opt
+                        ${professional.includes(opt)
                           ? 'bg-gray-900 text-white'
                           : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300'}`}
                     >
                       <span>{opt}</span>
-                      {professional === opt && <Check size={18} />}
+                      {professional.includes(opt) && <Check size={18} className="shrink-0 ml-2" />}
                     </button>
                   ))}
                 </div>
