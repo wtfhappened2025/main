@@ -245,21 +245,21 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
 
             {/* Step 1: Interests */}
             {step === 1 && (
-              <div>
-                <h2 className="text-xl font-extrabold text-gray-900 mb-1">Pick your interests</h2>
-                <p className="text-sm text-gray-400 mb-5">Select topics you care about. Choose at least one.</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col min-h-[70vh] justify-center">
+                <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2">Pick your interests</h2>
+                <p className="text-base text-gray-500 mb-8">Select topics you care about. Choose at least one.</p>
+                <div className="flex flex-wrap gap-3">
                   {INTERESTS.map(item => (
                     <button
                       key={item}
                       data-testid={`interest-${item.toLowerCase().replace(/\s/g, '-')}`}
                       onClick={() => toggleItem(interests, setInterests, item)}
-                      className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                      className={`px-6 py-3.5 rounded-2xl text-base font-semibold transition-all duration-150
                         ${interests.includes(item)
                           ? 'bg-gray-900 text-white shadow-sm'
                           : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'}`}
                     >
-                      {interests.includes(item) && <Check size={14} className="inline mr-1" />}
+                      {interests.includes(item) && <Check size={16} className="inline mr-1.5" />}
                       {item}
                     </button>
                   ))}
@@ -270,22 +270,22 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
             {/* Step 2: Curiosity Type */}
             {step === 2 && (
               <div>
-                <h2 className="text-xl font-extrabold text-gray-900 mb-1">What are you curious about?</h2>
-                <p className="text-sm text-gray-400 mb-5">This helps us pick better explanations for you.</p>
-                <div className="space-y-2">
+                <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2">What are you curious about?</h2>
+                <p className="text-base text-gray-500 mb-6">This helps us pick better explanations for you.</p>
+                <div className="space-y-3">
                   {CURIOSITY_TYPES.map(item => (
                     <button
                       key={item}
                       data-testid={`curiosity-${item.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '')}`}
                       onClick={() => toggleItem(curiosityTypes, setCuriosityTypes, item)}
-                      className={`w-full text-left px-4 py-3.5 rounded-xl text-sm font-medium
+                      className={`w-full text-left px-5 py-4 rounded-2xl text-base font-semibold
                         transition-all duration-150 flex items-center justify-between
                         ${curiosityTypes.includes(item)
                           ? 'bg-gray-900 text-white'
                           : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300'}`}
                     >
                       <span>{item}</span>
-                      {curiosityTypes.includes(item) && <Check size={16} />}
+                      {curiosityTypes.includes(item) && <Check size={18} />}
                     </button>
                   ))}
                 </div>
@@ -294,30 +294,30 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
 
             {/* Step 3: Explanation Depth */}
             {step === 3 && (
-              <div>
-                <h2 className="text-xl font-extrabold text-gray-900 mb-1">How detailed?</h2>
-                <p className="text-sm text-gray-400 mb-5">Set your preferred explanation depth.</p>
-                <div className="space-y-3">
+              <div className="flex flex-col min-h-[70vh] justify-center">
+                <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2">How detailed?</h2>
+                <p className="text-base text-gray-500 mb-8">Set your preferred explanation depth.</p>
+                <div className="space-y-4">
                   {DEPTH_OPTIONS.map(opt => (
                     <button
                       key={opt.key}
                       data-testid={`depth-${opt.key}`}
                       onClick={() => setDepth(opt.key)}
-                      className={`w-full text-left px-5 py-4 rounded-2xl transition-all duration-150
-                        flex items-center gap-4
+                      className={`w-full text-left px-6 py-6 rounded-2xl transition-all duration-150
+                        flex items-center gap-5
                         ${depth === opt.key
                           ? 'bg-gray-900 text-white shadow-md'
                           : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300'}`}
                     >
-                      <span className="text-2xl">{opt.icon}</span>
+                      <span className="text-3xl">{opt.icon}</span>
                       <div>
-                        <p className="font-semibold">{opt.label}</p>
-                        <p className={`text-xs mt-0.5 ${depth === opt.key ? 'text-gray-300' : 'text-gray-400'}`}>
+                        <p className="text-lg font-bold">{opt.label}</p>
+                        <p className={`text-sm mt-0.5 ${depth === opt.key ? 'text-gray-300' : 'text-gray-400'}`}>
                           {opt.desc}
                         </p>
                       </div>
                       {depth === opt.key && (
-                        <Check size={18} className="ml-auto" />
+                        <Check size={20} className="ml-auto" />
                       )}
                     </button>
                   ))}
@@ -327,18 +327,18 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
 
             {/* Step 4: Location */}
             {step === 4 && (
-              <div>
-                <h2 className="text-xl font-extrabold text-gray-900 mb-1">Where are you?</h2>
-                <p className="text-sm text-gray-400 mb-5">We'll show you regionally relevant trends.</p>
-                <div className="space-y-3">
+              <div className="flex flex-col min-h-[70vh] justify-center">
+                <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2">Where are you?</h2>
+                <p className="text-base text-gray-500 mb-8">We'll show you regionally relevant trends.</p>
+                <div className="space-y-4">
                   <div className="relative">
-                    <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                     <select
                       data-testid="location-country"
                       value={country}
                       onChange={e => setCountry(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200
-                        text-sm text-gray-900 outline-none focus:border-gray-400
+                      className="w-full pl-11 pr-4 py-4 rounded-2xl bg-white border border-gray-200
+                        text-base text-gray-900 outline-none focus:border-gray-400
                         focus:shadow-sm transition-all appearance-none"
                     >
                       <option value="">Select country</option>
@@ -353,8 +353,8 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
                     value={region}
                     onChange={e => setRegion(e.target.value)}
                     placeholder="Region or city (optional)"
-                    className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200
-                      text-sm text-gray-900 placeholder:text-gray-400 outline-none
+                    className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200
+                      text-base text-gray-900 placeholder:text-gray-400 outline-none
                       focus:border-gray-400 focus:shadow-sm transition-all"
                   />
                 </div>
@@ -363,27 +363,27 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
 
             {/* Step 5: Professional Context */}
             {step === 5 && (
-              <div>
-                <h2 className="text-xl font-extrabold text-gray-900 mb-1">What describes you best?</h2>
-                <p className="text-sm text-gray-400 mb-1">This is optional but improves relevance.</p>
-                <p className="text-xs text-gray-300 mb-5">
-                  <Briefcase size={12} className="inline mr-1" />
+              <div className="flex flex-col min-h-[70vh] justify-center">
+                <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2">What describes you best?</h2>
+                <p className="text-base text-gray-500 mb-1">This is optional but improves relevance.</p>
+                <p className="text-sm text-gray-400 mb-8">
+                  <Briefcase size={14} className="inline mr-1" />
                   You can skip this step
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {PROFESSIONAL_OPTIONS.map(opt => (
                     <button
                       key={opt}
                       data-testid={`professional-${opt.toLowerCase().replace(/[\s\/]/g, '-')}`}
                       onClick={() => setProfessional(professional === opt ? '' : opt)}
-                      className={`w-full text-left px-4 py-3.5 rounded-xl text-sm font-medium
+                      className={`w-full text-left px-5 py-4.5 rounded-2xl text-base font-semibold
                         transition-all duration-150 flex items-center justify-between
                         ${professional === opt
                           ? 'bg-gray-900 text-white'
                           : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300'}`}
                     >
                       <span>{opt}</span>
-                      {professional === opt && <Check size={16} />}
+                      {professional === opt && <Check size={18} />}
                     </button>
                   ))}
                 </div>
@@ -393,10 +393,10 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
             {/* Step 6: Follow Topics */}
             {step === 6 && (
               <div>
-                <h2 className="text-xl font-extrabold text-gray-900 mb-1">Follow specific topics</h2>
-                <p className="text-sm text-gray-400 mb-5">Get notified when these trend.</p>
-                <div className="relative mb-4">
-                  <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2">Follow specific topics</h2>
+                <p className="text-base text-gray-500 mb-6">Get notified when these trend.</p>
+                <div className="relative mb-5">
+                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
                     data-testid="topic-search"
                     type="text"
@@ -404,8 +404,8 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
                     onChange={e => setTopicSearch(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && canAddCustom) { e.preventDefault(); handleAddCustomTopic(); } }}
                     placeholder="Search or type to add your own"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200
-                      text-sm text-gray-900 placeholder:text-gray-400 outline-none
+                    className="w-full pl-11 pr-4 py-4 rounded-2xl bg-white border border-gray-200
+                      text-base text-gray-900 placeholder:text-gray-400 outline-none
                       focus:border-gray-400 focus:shadow-sm transition-all"
                   />
                 </div>
@@ -414,26 +414,26 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
                   <button
                     data-testid="add-custom-topic"
                     onClick={handleAddCustomTopic}
-                    className="w-full mb-4 px-4 py-2.5 rounded-xl bg-blue-50 text-blue-700 text-sm font-medium
+                    className="w-full mb-5 px-5 py-3.5 rounded-2xl bg-blue-50 text-blue-700 text-base font-semibold
                       flex items-center gap-2 hover:bg-blue-100 transition-colors border border-blue-100"
                   >
-                    <Plus size={14} /> Add "{topicSearch.trim()}"
+                    <Plus size={16} /> Add "{topicSearch.trim()}"
                   </button>
                 )}
 
                 {/* Custom added topics (not in groups) */}
                 {followedTopics.filter(t => !ALL_SUGGESTED.includes(t)).length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-2">Your Topics</p>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="mb-5">
+                    <p className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-3">Your Topics</p>
+                    <div className="flex flex-wrap gap-3">
                       {followedTopics.filter(t => !ALL_SUGGESTED.includes(t)).map(topic => (
                         <button
                           key={topic}
                           data-testid={`follow-custom-${topic.toLowerCase().replace(/\s/g, '-')}`}
                           onClick={() => toggleItem(followedTopics, setFollowedTopics, topic)}
-                          className="px-4 py-2.5 rounded-xl text-sm font-medium bg-gray-900 text-white shadow-sm transition-all duration-150"
+                          className="px-6 py-3.5 rounded-2xl text-base font-semibold bg-gray-900 text-white shadow-sm transition-all duration-150"
                         >
-                          <Check size={14} className="inline mr-1" />{topic}
+                          <Check size={16} className="inline mr-1.5" />{topic}
                         </button>
                       ))}
                     </div>
@@ -441,22 +441,22 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
                 )}
 
                 {/* Grouped suggested topics */}
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {TOPIC_GROUPS.map(group => (
                     <div key={group.label}>
-                      <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-2">{group.label}</p>
-                      <div className="flex flex-wrap gap-2">
+                      <p className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-3">{group.label}</p>
+                      <div className="flex flex-wrap gap-3">
                         {group.topics.map(topic => (
                           <button
                             key={topic}
                             data-testid={`follow-${topic.toLowerCase().replace(/\s/g, '-')}`}
                             onClick={() => toggleItem(followedTopics, setFollowedTopics, topic)}
-                            className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                            className={`px-6 py-3.5 rounded-2xl text-base font-semibold transition-all duration-150
                               ${followedTopics.includes(topic)
                                 ? 'bg-gray-900 text-white shadow-sm'
                                 : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'}`}
                           >
-                            {followedTopics.includes(topic) && <Check size={14} className="inline mr-1" />}
+                            {followedTopics.includes(topic) && <Check size={16} className="inline mr-1.5" />}
                             {topic}
                           </button>
                         ))}
@@ -466,7 +466,7 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
                 </div>
 
                 {followedTopics.length > 0 && (
-                  <p className="text-xs text-gray-400 mt-4">
+                  <p className="text-sm text-gray-400 mt-5">
                     Following {followedTopics.length} topic{followedTopics.length > 1 ? 's' : ''}
                   </p>
                 )}
@@ -482,27 +482,27 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
           data-testid="onboarding-next"
           onClick={handleNext}
           disabled={!canProceed() || saving}
-          className={`w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2
+          className={`w-full py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2
             transition-all duration-200
             ${canProceed() && !saving
               ? 'bg-gray-900 text-white hover:bg-gray-800'
               : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
         >
           {saving ? (
-            <Loader2 size={18} className="animate-spin" />
+            <Loader2 size={20} className="animate-spin" />
           ) : step === 0 ? (
-            <>Get Started <Sparkles size={16} /></>
+            <>Get Started <Sparkles size={18} /></>
           ) : step === STEPS.length - 1 ? (
-            <>Finish Setup <Check size={16} /></>
+            <>Finish Setup <Check size={18} /></>
           ) : (
-            <>Continue <ArrowRight size={16} /></>
+            <>Continue <ArrowRight size={18} /></>
           )}
         </button>
         {step > 0 && step < STEPS.length - 1 && step >= 5 && (
           <button
             data-testid="onboarding-skip"
             onClick={handleNext}
-            className="w-full py-2 mt-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            className="w-full py-3 mt-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
           >
             Skip this step
           </button>
