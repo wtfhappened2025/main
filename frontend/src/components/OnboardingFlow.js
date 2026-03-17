@@ -222,7 +222,7 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
                 </p>
 
                 {/* Visual feature pills */}
-                <div className="flex flex-wrap justify-center gap-3 mt-8 max-w-md">
+                <div className="grid grid-cols-3 gap-4 mt-10 w-full max-w-lg">
                   {[
                     { emoji: '\u26A1', text: '3-card explainers' },
                     { emoji: '\uD83D\uDD25', text: 'Trending topics' },
@@ -233,10 +233,10 @@ export default function OnboardingFlow({ user, onComplete, onLogout }) {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.4 + i * 0.15 }}
-                      className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
+                      className="flex flex-col items-center gap-3 px-4 py-6 rounded-2xl bg-white border border-gray-100 shadow-sm"
                     >
-                      <span className="text-xl">{item.emoji}</span>
-                      <span className="text-sm font-semibold text-gray-700">{item.text}</span>
+                      <span className="text-4xl">{item.emoji}</span>
+                      <span className="text-sm font-bold text-gray-700 text-center">{item.text}</span>
                     </motion.div>
                   ))}
                 </div>
